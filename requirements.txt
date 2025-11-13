@@ -1,0 +1,23 @@
+# FastAPI: Framework web moderno e rápido para construir APIs com Python 3.7+ baseado em padrões abertos
+fastapi
+
+# Uvicorn: Servidor ASGI para aplicações web Python, usado para executar aplicações FastAPI
+uvicorn[standard]
+
+# SQLAlchemy: Biblioteca SQL toolkit e Object-Relational Mapping (ORM) para Python
+sqlalchemy
+
+# psycopg2-binary: Adaptador PostgreSQL para Python, permite conectar e interagir com bancos de dados PostgreSQL
+psycopg2-binary
+
+# Pydantic: Biblioteca para validação de dados e configurações usando anotações de tipo Python
+pydantic
+
+# pydantic[email]: Extensão do Pydantic para validação de emails
+pydantic[email]
+
+# python-dotenv: Biblioteca para ler variáveis de ambiente de arquivos .env
+python-dotenv
+
+# Jinja2: Motor de templates para Python, usado para renderizar templates HTML
+jinja2
