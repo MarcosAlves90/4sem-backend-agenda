@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS usuario (
     tel_celular VARCHAR(15),
     id_curso INTEGER,
     modulo INTEGER DEFAULT 1,
+    bimestre INTEGER,
     FOREIGN KEY (id_instituicao) REFERENCES instituicao(id_instituicao) ON DELETE CASCADE,
     FOREIGN KEY (id_curso) REFERENCES curso(id_curso) ON DELETE SET NULL
 );
@@ -135,8 +136,8 @@ CREATE INDEX IF NOT EXISTS idx_horario_ra ON horario(ra);
 CREATE TABLE IF NOT EXISTS nota (
     id_nota SERIAL PRIMARY KEY,
     ra VARCHAR(13) NOT NULL,
-    semestre INTEGER NOT NULL,
     id_disciplina INTEGER NOT NULL,
+    bimestre INTEGER NOT NULL,
     nota NUMERIC(4, 2),
     FOREIGN KEY (ra) REFERENCES usuario(ra) ON DELETE CASCADE,
     FOREIGN KEY (id_disciplina) REFERENCES disciplina(id_disciplina) ON DELETE RESTRICT

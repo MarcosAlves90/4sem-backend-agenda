@@ -40,6 +40,7 @@ class Usuario(Base):
     tel_celular = Column(String(15), nullable=True)
     id_curso = Column(Integer, ForeignKey("curso.id_curso"), nullable=True)
     modulo = Column(Integer, nullable=True, default=1)
+    bimestre = Column(Integer, nullable=True)
 
     # Relacionamentos
     instituicao = relationship("Instituicao", back_populates="usuarios")
@@ -186,8 +187,8 @@ class Nota(Base):
 
     id_nota = Column(Integer, primary_key=True, index=True)
     ra = Column(String(13), ForeignKey("usuario.ra"), nullable=False, index=True)
-    semestre = Column(Integer, nullable=False)
     id_disciplina = Column(Integer, ForeignKey("disciplina.id_disciplina"), nullable=False)
+    bimestre = Column(Integer, nullable=False)
     nota = Column(Numeric(4, 2), nullable=True)
 
     # Relacionamentos

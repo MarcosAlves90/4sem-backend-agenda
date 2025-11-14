@@ -180,6 +180,7 @@ class UsuarioCreate(BaseSchema):
     tel_celular: Telefone = None
     id_curso: Optional[int] = None
     modulo: Optional[int] = Field(1, ge=1, le=12)
+    bimestre: Optional[int] = None
 
     @field_validator("ra")
     @classmethod
@@ -200,6 +201,7 @@ class UsuarioUpdate(BaseSchema):
     tel_celular: Telefone = None
     id_curso: Optional[int] = None
     modulo: Optional[int] = Field(None, ge=1, le=12)
+    bimestre: Optional[int] = None
 
     @field_validator("tel_celular")
     @classmethod
@@ -219,6 +221,7 @@ class Usuario(BaseSchema):
     tel_celular: Telefone = None
     id_curso: Optional[int] = None
     modulo: Optional[int] = Field(1, ge=1, le=12)
+    bimestre: Optional[int] = None
 
     @field_validator("ra")
     @classmethod
@@ -315,8 +318,8 @@ class Horario(BaseSchema):
 # ---- NOTA
 class NotaCreate(BaseSchema):
     ra: RA
-    semestre: SemestreEnum
     id_disciplina: int
+    bimestre: Optional[int] = None
     nota: NotaDecimal
 
     @field_validator("ra")
@@ -328,8 +331,8 @@ class NotaCreate(BaseSchema):
 class Nota(BaseSchema):
     id_nota: int
     ra: RA
-    semestre: SemestreEnum
     id_disciplina: int
+    bimestre: Optional[int] = None
     nota: NotaDecimal
 
     @field_validator("ra")
