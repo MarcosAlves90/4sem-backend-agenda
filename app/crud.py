@@ -604,6 +604,23 @@ def atualizar_calendario(
         raise
 
 
+def atualizar_calendario_parcial(
+    db: Session, id_data_evento: int, calendario: schemas.CalendarioUpdate
+) -> Optional[models.Calendario]:
+    """Atualizar evento de calendário (apenas campos fornecidos)."""
+    try:
+        db_calendario = obter_calendario(db, id_data_evento)
+        if db_calendario:
+            for key, value in calendario.model_dump(exclude_unset=True).items():
+                setattr(db_calendario, key, value)
+            db.commit()
+            db.refresh(db_calendario)
+        return db_calendario
+    except IntegrityError:
+        db.rollback()
+        raise
+
+
 def deletar_calendario(db: Session, id_data_evento: int) -> bool:
     """Deletar evento de calendário."""
     db_calendario = obter_calendario(db, id_data_evento)

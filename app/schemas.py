@@ -273,6 +273,17 @@ class CalendarioCreate(BaseSchema):
         return validar_ra(v)
 
 
+class CalendarioUpdate(BaseSchema):
+    ra: Optional[RA] = None
+    data_evento: Optional[date] = None
+    id_tipo_data: Optional[TipoDataEnum] = None
+
+    @field_validator("ra")
+    @classmethod
+    def validar_ra_campo(cls, v):
+        return validar_ra(v) if v is not None else None
+
+
 class Calendario(BaseSchema):
     id_data_evento: int
     ra: RA
