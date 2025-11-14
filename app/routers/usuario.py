@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from .. import crud, models, schemas
+from ..auth import criar_access_token, verificar_token
 
 
 # ============================================================================
@@ -18,6 +19,38 @@ router = APIRouter(
 # ============================================================================
 # ENDPOINTS - USUÁRIOS
 # ============================================================================
+
+
+@router.post("/login", response_model=schemas.Token, tags=["Autenticação"])
+def login(
+	credenciais: schemas.Login,
+	db: Session = Depends(get_db),
+):
+	"""
+	Realizar login e obter token JWT.
+	
+	**Campos Obrigatórios:**
+	- `username`: Username do usuário
+	- `senha_hash`: Senha do usuário
+	
+	**Response:**
+	- `access_token`: Token JWT para usar nas requisições autenticadas
+	- `token_type`: Tipo do token (sempre "bearer")
+	"""
+	# Procura usuário por username
+	db_usuario = db.query(models.Usuario).filter(models.Usuario.username == credenciais.username).first()
+	
+	if not db_usuario:
+		raise HTTPException(status_code=401, detail="Usuário ou senha inválidos")
+	
+	# Verifica a senha com bcrypt
+	if not crud.verificar_senha(credenciais.senha_hash, db_usuario.senha_hash):
+		raise HTTPException(status_code=401, detail="Usuário ou senha inválidos")
+	
+	# Cria token JWT
+	access_token = criar_access_token(data={"id_usuario": db_usuario.id_usuario})
+	
+	return {"access_token": access_token, "token_type": "bearer"}
 
 
 @router.post("/", response_model=schemas.GenericResponse[schemas.Usuario], status_code=201)
@@ -52,6 +85,21 @@ def criar_usuario(
 		)
 	except Exception as e:
 		raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/me", response_model=schemas.GenericResponse[schemas.Usuario], tags=["Autenticação"])
+def obter_perfil_autenticado(
+	usuario_autenticado: models.Usuario = Depends(verificar_token),
+):
+	"""
+	Obter dados do usuário autenticado.
+	
+	**Requer token JWT no header:**
+	```
+	Authorization: Bearer <seu_token_jwt>
+	```
+	"""
+	return schemas.GenericResponse(data=usuario_autenticado, success=True)
 
 
 @router.get("/", response_model=schemas.GenericListResponse[schemas.Usuario])

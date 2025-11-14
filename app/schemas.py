@@ -368,6 +368,22 @@ class Anotacao(BaseSchema):
 
 
 # ============================================================================
+# SCHEMAS - AUTENTICAÇÃO (JWT)
+# ============================================================================
+
+class Login(BaseSchema):
+    """Credenciais para login"""
+    username: Username
+    senha_hash: str = Field(..., min_length=6)
+
+
+class Token(BaseSchema):
+    """Response com token JWT"""
+    access_token: str
+    token_type: str = "bearer"
+
+
+# ============================================================================
 # SCHEMAS - MODELOS COM RELACIONAMENTOS (OPCIONAL - para consultas complexas)
 # ============================================================================
 
