@@ -88,6 +88,7 @@ class Disciplina(Base):
     docentes = relationship("DisciplinaDocente", back_populates="disciplina")
     notas = relationship("Nota", back_populates="disciplina")
 
+
 class Curso(Base):
     """Modelo de Curso"""
     __tablename__ = "curso"
