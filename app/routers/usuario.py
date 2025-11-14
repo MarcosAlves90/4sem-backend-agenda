@@ -1,0 +1,196 @@
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session
+
+from ..database import get_db
+from .. import crud, models, schemas
+
+
+# ============================================================================
+# CONFIGURAÇÃO DO ROUTER
+# ============================================================================
+
+router = APIRouter(
+	tags=["Usuário"],
+	responses={404: {"description": "Não encontrado"}},
+)
+
+
+# ============================================================================
+# ENDPOINTS - USUÁRIOS
+# ============================================================================
+
+
+@router.post("/", response_model=schemas.GenericResponse[schemas.Usuario], status_code=201)
+def criar_usuario(
+	usuario: schemas.UsuarioCreate,
+	db: Session = Depends(get_db),
+):
+	"""
+	Criar novo usuário (aluno).
+	
+	**Campos Obrigatórios:**
+	- `ra`: Registro Acadêmico (exatamente 13 dígitos)
+	- `nome`: Nome do usuário (1-50 caracteres)
+	- `email`: Email único (máx. 40 caracteres)
+	- `username`: Username único (1-20 caracteres)
+	- `nome_instituicao`: Nome da instituição (1-80 caracteres) - será criada automaticamente se não existir
+	- `senha_hash`: Senha hash (mínimo 6 caracteres)
+	
+	**Campos Opcionais:**
+	- `dt_nascimento`: Data de nascimento (formato: YYYY-MM-DD)
+	- `tel_celular`: Telefone celular (formato internacional com '+' ou mínimo 10 dígitos, máx. 15 caracteres)
+	- `id_curso`: ID do curso
+	- `modulo`: Módulo (1-12, padrão: 1)
+	- `bimestre`: Bimestre
+	"""
+	try:
+		db_usuario = crud.criar_usuario(db, usuario)
+		return schemas.GenericResponse(
+			data=db_usuario,
+			success=True,
+			message="Usuário criado com sucesso",
+		)
+	except Exception as e:
+		raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/", response_model=schemas.GenericListResponse[schemas.Usuario])
+def listar_usuarios(
+	skip: int = Query(0, ge=0, description="Paginação: saltar registros"),
+	limit: int = Query(100, ge=1, le=1000, description="Paginação: limite de registros"),
+	db: Session = Depends(get_db),
+):
+	"""
+	Listar todos os usuários com paginação.
+	"""
+	usuarios = crud.obter_usuarios(db, skip, limit)
+	total = db.query(models.Usuario).count()
+
+	return schemas.GenericListResponse(
+		data=usuarios,
+		success=True,
+		total=total,
+		skip=skip,
+		limit=limit,
+	)
+
+
+@router.get("/{id_usuario}", response_model=schemas.GenericResponse[schemas.Usuario])
+def obter_usuario(
+	id_usuario: int,
+	db: Session = Depends(get_db),
+):
+	"""
+	Obter usuário por ID.
+	"""
+	db_usuario = crud.obter_usuario(db, id_usuario)
+	if not db_usuario:
+		raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+	return schemas.GenericResponse(data=db_usuario, success=True)
+
+
+@router.get("/ra/{ra}", response_model=schemas.GenericResponse[schemas.Usuario])
+def obter_usuario_por_ra(
+	ra: str,
+	db: Session = Depends(get_db),
+):
+	"""
+	Obter usuário por RA.
+	"""
+	db_usuario = crud.obter_usuario_por_ra(db, ra)
+	if not db_usuario:
+		raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+	return schemas.GenericResponse(data=db_usuario, success=True)
+
+
+@router.get("/instituicao/{id_instituicao}", response_model=schemas.GenericListResponse[schemas.Usuario])
+def listar_usuarios_por_instituicao(
+	id_instituicao: int,
+	skip: int = Query(0, ge=0, description="Paginação: saltar registros"),
+	limit: int = Query(100, ge=1, le=1000, description="Paginação: limite de registros"),
+	db: Session = Depends(get_db),
+):
+	"""
+	Listar usuários de uma instituição.
+	"""
+	usuarios = crud.obter_usuarios_por_instituicao(db, id_instituicao, skip, limit)
+	total = db.query(models.Usuario).filter(models.Usuario.id_instituicao == id_instituicao).count()
+
+	return schemas.GenericListResponse(
+		data=usuarios,
+		success=True,
+		total=total,
+		skip=skip,
+		limit=limit,
+	)
+
+
+@router.get("/curso/{id_curso}", response_model=schemas.GenericListResponse[schemas.Usuario])
+def listar_usuarios_por_curso(
+	id_curso: int,
+	skip: int = Query(0, ge=0, description="Paginação: saltar registros"),
+	limit: int = Query(100, ge=1, le=1000, description="Paginação: limite de registros"),
+	db: Session = Depends(get_db),
+):
+	"""
+	Listar usuários de um curso.
+	"""
+	usuarios = crud.obter_usuarios_por_curso(db, id_curso, skip, limit)
+	total = db.query(models.Usuario).filter(models.Usuario.id_curso == id_curso).count()
+
+	return schemas.GenericListResponse(
+		data=usuarios,
+		success=True,
+		total=total,
+		skip=skip,
+		limit=limit,
+	)
+
+
+@router.put("/{id_usuario}", response_model=schemas.GenericResponse[schemas.Usuario])
+def atualizar_usuario(
+	id_usuario: int,
+	usuario: schemas.UsuarioUpdate,
+	db: Session = Depends(get_db),
+):
+	"""
+	Atualizar usuário (apenas campos fornecidos no body).
+	"""
+	db_usuario = crud.obter_usuario(db, id_usuario)
+	if not db_usuario:
+		raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+	try:
+		db_atualizado = crud.atualizar_usuario(db, id_usuario, usuario)
+		return schemas.GenericResponse(
+			data=db_atualizado,
+			success=True,
+			message="Usuário atualizado com sucesso",
+		)
+	except Exception as e:
+		raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/{id_usuario}", response_model=schemas.GenericResponse[dict])
+def deletar_usuario(
+	id_usuario: int,
+	db: Session = Depends(get_db),
+):
+	"""
+	Deletar um usuário por ID.
+	"""
+	db_usuario = crud.obter_usuario(db, id_usuario)
+	if not db_usuario:
+		raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+	if crud.deletar_usuario(db, id_usuario):
+		return schemas.GenericResponse(
+			data={"id_deletado": id_usuario},
+			success=True,
+			message="Usuário deletado com sucesso",
+		)
+
+	raise HTTPException(status_code=400, detail="Erro ao deletar usuário")
+

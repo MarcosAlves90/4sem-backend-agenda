@@ -174,7 +174,7 @@ class UsuarioCreate(BaseSchema):
     nome: str = Field(..., min_length=1, max_length=50)
     email: EmailUsuario
     username: Username
-    id_instituicao: int
+    nome_instituicao: str = Field(..., min_length=1, max_length=80, description="Nome da instituição (será criada se não existir)")
     senha_hash: str = Field(..., min_length=6)
     dt_nascimento: Optional[date] = None
     tel_celular: Telefone = None
@@ -197,6 +197,7 @@ class UsuarioUpdate(BaseSchema):
     nome: Optional[str] = Field(None, min_length=1, max_length=50)
     email: Optional[EmailUsuario] = None
     username: Optional[Username] = None
+    senha_hash: Optional[str] = Field(None, min_length=6, description="Senha (será hasheada automaticamente)")
     dt_nascimento: Optional[date] = None
     tel_celular: Telefone = None
     id_curso: Optional[int] = None

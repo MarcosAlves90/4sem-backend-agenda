@@ -1,7 +1,23 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
+import bcrypt
 from . import models, schemas
+
+
+# ============================================================================
+# UTILITÁRIOS DE SEGURANÇA
+# ============================================================================
+
+def hash_senha(senha: str) -> str:
+    """Gera hash bcrypt da senha"""
+    salt = bcrypt.gensalt(rounds=12)
+    return bcrypt.hashpw(senha.encode('utf-8'), salt).decode('utf-8')
+
+
+def verificar_senha(senha: str, senha_hash: str) -> bool:
+    """Verifica se a senha corresponde ao hash"""
+    return bcrypt.checkpw(senha.encode('utf-8'), senha_hash.encode('utf-8'))
 
 
 # ============================================================================
@@ -25,6 +41,20 @@ def obter_instituicao(db: Session, id_instituicao: int) -> Optional[models.Insti
 def obter_instituicoes(db: Session, skip: int = 0, limit: int = 100) -> List[models.Instituicao]:
     """Listar todas as instituições com paginação."""
     return db.query(models.Instituicao).offset(skip).limit(limit).all()
+
+
+def obter_ou_criar_instituicao_por_nome(db: Session, nome: str) -> models.Instituicao:
+    """Obter instituição por nome ou criar se não existir."""
+    db_instituicao = db.query(models.Instituicao).filter(models.Instituicao.nome == nome).first()
+    
+    if not db_instituicao:
+        # Criar nova instituição se não existir
+        db_instituicao = models.Instituicao(nome=nome)
+        db.add(db_instituicao)
+        db.commit()
+        db.refresh(db_instituicao)
+    
+    return db_instituicao
 
 
 def atualizar_instituicao(
@@ -335,9 +365,20 @@ def deletar_discente(db: Session, id_discente: int) -> bool:
 # ============================================================================
 
 def criar_usuario(db: Session, usuario: schemas.UsuarioCreate) -> models.Usuario:
-    """Criar novo usuário (aluno)."""
+    """Criar novo usuário (aluno). Cria instituição automaticamente se não existir."""
     try:
-        db_usuario = models.Usuario(**usuario.model_dump())
+        # Obter ou criar instituição baseado no nome fornecido
+        db_instituicao = obter_ou_criar_instituicao_por_nome(db, usuario.nome_instituicao)
+        
+        # Preparar dados do usuário
+        usuario_data = usuario.model_dump(exclude={"nome_instituicao"})
+        usuario_data["id_instituicao"] = db_instituicao.id_instituicao
+        
+        # Hash da senha
+        usuario_data["senha_hash"] = hash_senha(usuario_data["senha_hash"])
+        
+        # Criar usuário
+        db_usuario = models.Usuario(**usuario_data)
         db.add(db_usuario)
         db.commit()
         db.refresh(db_usuario)
@@ -406,7 +447,13 @@ def atualizar_usuario(
         db_usuario = obter_usuario(db, id_usuario)
         if db_usuario:
             # Atualizar apenas campos não-nulos
-            for key, value in usuario.model_dump(exclude_unset=True).items():
+            dados_atualizacao = usuario.model_dump(exclude_unset=True)
+            
+            # Se senha foi fornecida, fazer hash
+            if "senha_hash" in dados_atualizacao and dados_atualizacao["senha_hash"]:
+                dados_atualizacao["senha_hash"] = hash_senha(dados_atualizacao["senha_hash"])
+            
+            for key, value in dados_atualizacao.items():
                 setattr(db_usuario, key, value)
             db.commit()
             db.refresh(db_usuario)

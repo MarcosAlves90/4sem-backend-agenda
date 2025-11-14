@@ -87,7 +87,6 @@ class Disciplina(Base):
     cursos = relationship("CursoDisciplina", back_populates="disciplina")
     docentes = relationship("DisciplinaDocente", back_populates="disciplina")
     notas = relationship("Nota", back_populates="disciplina")
-    horarios = relationship("Horario", back_populates="disciplina_1_rel")
 
 
 class Curso(Base):

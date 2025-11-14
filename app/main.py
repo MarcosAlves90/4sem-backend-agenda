@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .database import engine, Base
 from . import models  # noqa: F401 - Necessário para registrar os modelos no SQLAlchemy
-from .routers import health
+from .routers import health, usuario
 
 # ============================================================================
 # INICIALIZAÇÃO DO BANCO DE DADOS
@@ -51,6 +51,7 @@ templates = Jinja2Templates(directory="templates")
 # ============================================================================
 
 app.include_router(health.router, prefix="/api/v1/health")
+app.include_router(usuario.router, prefix="/api/v1/usuario")
 
 # ============================================================================
 # ROTAS PRINCIPAIS
