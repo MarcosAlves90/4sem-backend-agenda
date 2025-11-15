@@ -20,7 +20,7 @@ router = APIRouter(
 @router.get("/", response_model=schemas.GenericListResponse[schemas.Discente])
 def get_all_students(
     skip : int = Query(0, ge=0, description="Números de itens para pular"), 
-    limit : int = Query(100, ge=0, le=1000, description="Números maximo de itens para restornar"),
+    limit : int = Query(100, ge=0, le=1000, description="Números maximo de itens para retornar"),
     db: Session = Depends(get_db)
 ):
     """
