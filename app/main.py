@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+
+from app.routers import discentes
 # from fastapi.middleware.cors import CORSMiddleware
 # import os
 
@@ -51,6 +53,7 @@ templates = Jinja2Templates(directory="templates")
 # ============================================================================
 
 app.include_router(health.router, prefix="/api/v1/health")
+app.include_router(discentes.router, prefix="/api/v1/alunos")
 
 # ============================================================================
 # ROTAS PRINCIPAIS
