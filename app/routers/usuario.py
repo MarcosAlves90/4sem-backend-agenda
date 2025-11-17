@@ -64,8 +64,9 @@ def login(
 		max_age=7 * 24 * 60 * 60,
 		path="/",
 	)
-	
-	return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+
+	# Retornamos apenas o access_token no body; o refresh_token fica no cookie HttpOnly
+	return {"access_token": access_token, "token_type": "bearer"}
 
 
 @router.post("/refresh", response_model=schemas.Token, tags=["Autenticação"])
@@ -107,8 +108,9 @@ def refresh_token(
 		max_age=7 * 24 * 60 * 60,
 		path="/",
 	)
-	
-	return {"access_token": access_token, "refresh_token": new_refresh_token, "token_type": "bearer"}
+
+	# Retornamos apenas o access_token no body; o refresh_token fica no cookie HttpOnly
+	return {"access_token": access_token, "token_type": "bearer"}
 
 
 @router.post("/", response_model=schemas.GenericResponse[schemas.Usuario], status_code=201)

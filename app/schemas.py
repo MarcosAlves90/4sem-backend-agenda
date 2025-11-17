@@ -376,9 +376,14 @@ class Login(BaseSchema):
 
 
 class Token(BaseSchema):
-    """Response com token JWT"""
+    """Response com token JWT
+
+    Observação: `refresh_token` é opcional aqui porque o refresh token
+    será enviado preferencialmente via cookie HttpOnly. Mantemos o campo
+    para compatibilidade em casos onde seja necessário retorná-lo no body.
+    """
     access_token: str
-    refresh_token: str
+    refresh_token: Optional[str] = None
     token_type: str = "bearer"
 
 
