@@ -215,7 +215,7 @@ def obter_evento_calendario(
     )
 
 
-@router.get("/data/{data_evento}", response_model=schemas.GenericResponse[schemas.Calendario | None])
+@router.get("/data/{data_evento}", response_model=schemas.GenericResponse[schemas.Calendario])
 def obter_evento_por_data(
     data_evento: str = Path(..., description="Data do evento (formato: YYYY-MM-DD)"),
     ra: str = Query(..., min_length=13, max_length=13, description="RA do usuário"),
