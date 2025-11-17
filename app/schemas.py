@@ -194,22 +194,20 @@ class UsuarioCreate(BaseSchema):
 
 
 class UsuarioUpdate(BaseSchema):
-    nome: Optional[str] = Field(None, min_length=1, max_length=50)
-    email: Optional[EmailUsuario] = None
-    username: Optional[Username] = None
-    senha_hash: Optional[str] = Field(None, min_length=6, description="Senha (será hasheada automaticamente)")
-    dt_nascimento: Optional[date] = None
-    tel_celular: Telefone = None
-    id_curso: Optional[int] = None
-    modulo: Optional[int] = Field(None, ge=1, le=12)
-    bimestre: Optional[int] = None
+	nome: Optional[str] = Field(None, min_length=1, max_length=50)
+	email: Optional[EmailUsuario] = None
+	username: Optional[Username] = None
+	senha_hash: Optional[str] = Field(None, min_length=6, description="Senha (será hasheada automaticamente)")
+	dt_nascimento: Optional[date] = None
+	tel_celular: Telefone = None
+	nome_curso: Optional[str] = Field(None, min_length=1, max_length=80, description="Nome do curso (será criado se não existir)")
+	modulo: Optional[int] = Field(None, ge=1, le=12)
+	bimestre: Optional[int] = None
 
-    @field_validator("tel_celular")
-    @classmethod
-    def validar_tel(cls, v):
-        return validar_telefone(v)
-
-
+	@field_validator("tel_celular")
+	@classmethod
+	def validar_tel(cls, v):
+		return validar_telefone(v)
 class Usuario(BaseSchema):
     """Modelo sem expor senha_hash"""
     id_usuario: Optional[int] = None

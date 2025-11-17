@@ -263,6 +263,52 @@ def atualizar_usuario(
 ):
 	"""
 	Atualizar usuário (apenas campos fornecidos no body).
+	
+	**Campos Atualizáveis:**
+	- `nome`: Nome do usuário (1-50 caracteres)
+	- `email`: Email único (máx. 40 caracteres)
+	- `username`: Username único (1-20 caracteres)
+	- `senha_hash`: Senha (será hasheada automaticamente)
+	- `dt_nascimento`: Data de nascimento (formato: YYYY-MM-DD)
+	- `tel_celular`: Telefone celular (formato internacional com '+' ou mínimo 10 dígitos)
+	- `nome_curso`: Nome do curso (será criado automaticamente se não existir)
+	- `modulo`: Módulo (1-12)
+	- `bimestre`: Bimestre
+	"""
+	db_usuario = crud.obter_usuario(db, id_usuario)
+	if not db_usuario:
+		raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+	try:
+		db_atualizado = crud.atualizar_usuario(db, id_usuario, usuario)
+		return schemas.GenericResponse(
+			data=db_atualizado,
+			success=True,
+			message="Usuário atualizado com sucesso",
+		)
+	except Exception as e:
+		raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.patch("/{id_usuario}", response_model=schemas.GenericResponse[schemas.Usuario])
+def atualizar_usuario_parcial(
+	id_usuario: int,
+	usuario: schemas.UsuarioUpdate,
+	db: Session = Depends(get_db),
+):
+	"""
+	Atualizar usuário parcialmente (apenas campos fornecidos no body).
+	
+	**Campos Atualizáveis:**
+	- `nome`: Nome do usuário (1-50 caracteres)
+	- `email`: Email único (máx. 40 caracteres)
+	- `username`: Username único (1-20 caracteres)
+	- `senha_hash`: Senha (será hasheada automaticamente)
+	- `dt_nascimento`: Data de nascimento (formato: YYYY-MM-DD)
+	- `tel_celular`: Telefone celular (formato internacional com '+' ou mínimo 10 dígitos)
+	- `nome_curso`: Nome do curso (será criado automaticamente se não existir)
+	- `modulo`: Módulo (1-12)
+	- `bimestre`: Bimestre
 	"""
 	db_usuario = crud.obter_usuario(db, id_usuario)
 	if not db_usuario:

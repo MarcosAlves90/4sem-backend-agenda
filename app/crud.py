@@ -219,16 +219,40 @@ def atualizar_curso(db: Session, id_curso: int, curso: schemas.CursoCreate) -> O
     return db_curso
 
 
+def obter_ou_criar_curso_por_nome(db: Session, nome_curso: str, id_instituicao: int) -> models.Curso:
+	"""Obter curso por nome ou criar se não existir."""
+	try:
+		db_curso = db.query(models.Curso).filter(
+			models.Curso.nome == nome_curso,
+			models.Curso.id_instituicao == id_instituicao
+		).first()
+		
+		if not db_curso:
+			# Criar novo curso se não existir
+			db_curso = models.Curso(nome=nome_curso, id_instituicao=id_instituicao)
+			db.add(db_curso)
+			db.commit()
+			db.refresh(db_curso)
+		
+		return db_curso
+	except IntegrityError:
+		# Se houver erro de integridade (duplicação por race condition), fazer rollback e buscar novamente
+		db.rollback()
+		db_curso = db.query(models.Curso).filter(
+			models.Curso.nome == nome_curso,
+			models.Curso.id_instituicao == id_instituicao
+		).first()
+		return db_curso
+
+
 def deletar_curso(db: Session, id_curso: int) -> bool:
-    """Deletar curso."""
-    db_curso = obter_curso(db, id_curso)
-    if db_curso:
-        db.delete(db_curso)
-        db.commit()
-        return True
-    return False
-
-
+	"""Deletar curso."""
+	db_curso = obter_curso(db, id_curso)
+	if db_curso:
+		db.delete(db_curso)
+		db.commit()
+		return True
+	return False
 # ============================================================================
 # DOCENTE
 # ============================================================================
@@ -440,29 +464,40 @@ def obter_usuarios_por_curso(
 
 
 def atualizar_usuario(
-    db: Session, id_usuario: int, usuario: schemas.UsuarioUpdate
+	db: Session, id_usuario: int, usuario: schemas.UsuarioUpdate
 ) -> Optional[models.Usuario]:
-    """Atualizar usuário (apenas campos fornecidos)."""
-    try:
-        db_usuario = obter_usuario(db, id_usuario)
-        if db_usuario:
-            # Atualizar apenas campos não-nulos
-            dados_atualizacao = usuario.model_dump(exclude_unset=True)
-            
-            # Se senha foi fornecida, fazer hash
-            if "senha_hash" in dados_atualizacao and dados_atualizacao["senha_hash"]:
-                dados_atualizacao["senha_hash"] = hash_senha(dados_atualizacao["senha_hash"])
-            
-            for key, value in dados_atualizacao.items():
-                setattr(db_usuario, key, value)
-            db.commit()
-            db.refresh(db_usuario)
-        return db_usuario
-    except IntegrityError:
-        db.rollback()
-        raise
-
-
+	"""Atualizar usuário (apenas campos fornecidos)."""
+	try:
+		db_usuario = obter_usuario(db, id_usuario)
+		if db_usuario:
+			# Atualizar apenas campos não-nulos
+			dados_atualizacao = usuario.model_dump(exclude_unset=True)
+			
+			# Se nome_curso foi fornecido, resolver para id_curso
+			if "nome_curso" in dados_atualizacao and dados_atualizacao["nome_curso"]:
+				db_curso = obter_ou_criar_curso_por_nome(
+					db, 
+					dados_atualizacao["nome_curso"],
+					db_usuario.id_instituicao
+				)
+				dados_atualizacao["id_curso"] = db_curso.id_curso
+				del dados_atualizacao["nome_curso"]
+			else:
+				# Remover nome_curso se não foi fornecido
+				dados_atualizacao.pop("nome_curso", None)
+			
+			# Se senha foi fornecida, fazer hash
+			if "senha_hash" in dados_atualizacao and dados_atualizacao["senha_hash"]:
+				dados_atualizacao["senha_hash"] = hash_senha(dados_atualizacao["senha_hash"])
+			
+			for key, value in dados_atualizacao.items():
+				setattr(db_usuario, key, value)
+			db.commit()
+			db.refresh(db_usuario)
+		return db_usuario
+	except IntegrityError:
+		db.rollback()
+		raise
 def deletar_usuario(db: Session, id_usuario: int) -> bool:
     """Deletar usuário."""
     db_usuario = obter_usuario(db, id_usuario)
