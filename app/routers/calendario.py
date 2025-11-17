@@ -106,7 +106,6 @@ def validar_evento_duplicado(
     """
     from typing import cast
     
-    # Garante que os valores são do tipo esperado
     ra_str = cast(str, ra)
     
     query = db.query(models.Calendario).filter(
@@ -114,7 +113,6 @@ def validar_evento_duplicado(
         models.Calendario.data_evento == data_evento
     )
     
-    # Se atualizando, exclui o evento atual da verificação
     if id_data_evento_atual is not None:
         query = query.filter(models.Calendario.id_data_evento != id_data_evento_atual)
     
@@ -202,7 +200,6 @@ def obter_evento_calendario(
     **Parâmetros:**
     - `id_data_evento`: ID do evento de calendário
     """
-    # Validações
     db_evento = validar_calendario_existe(db, id_data_evento)
     
     return schemas.GenericResponse(
@@ -220,13 +217,12 @@ def obter_evento_por_data(
     """
     Obter evento de calendário para uma data específica do usuário.
     
-    Como existe apenas um evento por data e usuário, retorna um único evento ou null.
+    Retorna 404 se nenhum evento for encontrado para a combinação de RA e data.
     
     **Parâmetros:**
     - `data_evento`: Data no formato YYYY-MM-DD (no path) - obrigatório
     - `ra`: RA do usuário (13 dígitos, query param) - obrigatório
     """
-    # Validações
     validar_usuario_existe(db, ra)
     
     try:
@@ -305,7 +301,6 @@ def atualizar_evento_calendario(
         - `data_evento`: Data do evento
         - `id_tipo_data`: Tipo de data
     """
-    # Validações
     validar_calendario_existe(db, id_data_evento)
     validar_usuario_existe(db, calendario.ra)
     validar_tipo_data_existe(db, calendario.id_tipo_data)
@@ -341,7 +336,6 @@ def atualizar_parcial_evento_calendario(
         - `data_evento`: Data do evento
         - `id_tipo_data`: Tipo de data
     """
-    # Validações
     db_evento = validar_calendario_existe(db, id_data_evento)
     
     if calendario.ra:
@@ -378,7 +372,6 @@ def deletar_evento_calendario(
     **Parâmetros:**
     - `id_data_evento`: ID do evento a deletar
     """
-    # Validações
     validar_calendario_existe(db, id_data_evento)
     
     if crud.deletar_calendario(db, id_data_evento):
