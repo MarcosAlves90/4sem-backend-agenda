@@ -380,7 +380,13 @@ class Login(BaseSchema):
 class Token(BaseSchema):
     """Response com token JWT"""
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
+
+
+class RefreshTokenRequest(BaseSchema):
+    """Request para renovar access_token"""
+    refresh_token: str
 
 
 # ============================================================================

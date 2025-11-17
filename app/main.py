@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-# from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 # import os
 
 from .database import engine, Base
@@ -25,14 +25,14 @@ app = FastAPI(
     description="API para gerenciamento de agenda acadêmica de alunos",
 )
 
-# CORS
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],  # Substituir por domínios específicos em produção
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
+# CORS - Necessário para permitir credenciais (cookies)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Substituir por domínios específicos em produção
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # ============================================================================

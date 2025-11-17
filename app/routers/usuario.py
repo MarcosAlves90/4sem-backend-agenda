@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from .. import crud, models, schemas
-from ..auth import criar_access_token, verificar_token
+from ..auth import criar_access_token, criar_refresh_token, verificar_token, verificar_refresh_token
 
 
 # ============================================================================
@@ -24,6 +24,7 @@ router = APIRouter(
 @router.post("/login", response_model=schemas.Token, tags=["Autenticação"])
 def login(
 	credenciais: schemas.Login,
+	response: Response,
 	db: Session = Depends(get_db),
 ):
 	"""
@@ -35,7 +36,9 @@ def login(
 	
 	**Response:**
 	- `access_token`: Token JWT para usar nas requisições autenticadas
+	- `refresh_token`: Token para renovar o access_token (válido por 7 dias)
 	- `token_type`: Tipo do token (sempre "bearer")
+	- Refresh token também será enviado em cookie HttpOnly
 	"""
 	# Procura usuário por username
 	db_usuario = db.query(models.Usuario).filter(models.Usuario.username == credenciais.username).first()
@@ -47,10 +50,65 @@ def login(
 	if not crud.verificar_senha(credenciais.senha_hash, db_usuario.senha_hash):
 		raise HTTPException(status_code=401, detail="Usuário ou senha inválidos")
 	
-	# Cria token JWT
+	# Cria tokens JWT
 	access_token = criar_access_token(data={"id_usuario": db_usuario.id_usuario})
+	refresh_token = criar_refresh_token(data={"id_usuario": db_usuario.id_usuario})
 	
-	return {"access_token": access_token, "token_type": "bearer"}
+	# Setar refresh token em cookie HttpOnly
+	response.set_cookie(
+		key="refresh_token",
+		value=refresh_token,
+		httponly=True,
+		secure=False,
+		samesite="lax",
+		max_age=7 * 24 * 60 * 60,
+		path="/",
+	)
+	
+	return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+
+
+@router.post("/refresh", response_model=schemas.Token, tags=["Autenticação"])
+def refresh_token(
+	request: schemas.RefreshTokenRequest,
+	response: Response,
+	db: Session = Depends(get_db),
+):
+	"""
+	Renovar access_token usando refresh_token.
+	
+	**Body:**
+	- `refresh_token`: Seu refresh_token obtido no login (ou use o cookie automaticamente)
+	
+	**Response:**
+	- `access_token`: Novo token JWT válido por 30 minutos
+	- `refresh_token`: Novo refresh_token válido por 7 dias
+	- `token_type`: Tipo do token (sempre "bearer")
+	- Novo refresh token também será enviado em cookie HttpOnly
+	"""
+	id_usuario = verificar_refresh_token(request.refresh_token)
+	
+	# Verifica se o usuário ainda existe
+	db_usuario = crud.obter_usuario(db, id_usuario)
+	if not db_usuario:
+		raise HTTPException(status_code=401, detail="Usuário não encontrado")
+	
+	# Gera novos tokens
+	access_token = criar_access_token(data={"id_usuario": id_usuario})
+	new_refresh_token = criar_refresh_token(data={"id_usuario": id_usuario})
+	
+	# Atualizar cookie de refresh
+	response.set_cookie(
+		key="refresh_token",
+		value=new_refresh_token,
+		httponly=True,
+		secure=False,
+		samesite="lax",
+		max_age=7 * 24 * 60 * 60,
+		path="/",
+	)
+	
+	return {"access_token": access_token, "refresh_token": new_refresh_token, "token_type": "bearer"}
 
 
 @router.post("/", response_model=schemas.GenericResponse[schemas.Usuario], status_code=201)
