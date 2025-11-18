@@ -27,3 +27,6 @@ bcrypt
 
 # PyJWT: Biblioteca para criação e verificação de tokens JWT
 pyjwt
+
+# Alembic: Ferramenta de migração de banco de dados para SQLAlchemy
+alembic
