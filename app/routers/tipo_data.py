@@ -14,6 +14,46 @@ router = APIRouter(
 )
 
 # ============================================================================
+# EXCEÇÕES CUSTOMIZADAS
+# ============================================================================
+
+class TipoDataNaoEncontrado(HTTPException):
+	"""Tipo de data não encontrado"""
+	def __init__(self):
+		super().__init__(status_code=404, detail="Tipo de data não encontrado")
+
+
+class ErroAoCriarTipoData(HTTPException):
+	"""Erro ao criar tipo de data"""
+	def __init__(self, detail: str):
+		super().__init__(status_code=400, detail=detail)
+
+
+class ErroAoAtualizarTipoData(HTTPException):
+	"""Erro ao atualizar tipo de data"""
+	def __init__(self, detail: str):
+		super().__init__(status_code=400, detail=detail)
+
+
+class ErroAoDeletarTipoData(HTTPException):
+	"""Erro ao deletar tipo de data"""
+	def __init__(self):
+		super().__init__(status_code=400, detail="Erro ao deletar tipo de data")
+
+
+# ============================================================================
+# VALIDADORES (Responsabilidade Única)
+# ============================================================================
+
+def _validar_tipo_data_existe(db: Session, id_tipo_data: int) -> models.TipoData:
+	"""Valida se tipo de data existe. Retorna tipo ou lança exceção."""
+	tipo_data = crud.obter_tipo_data(db, id_tipo_data)
+	if not tipo_data:
+		raise TipoDataNaoEncontrado()
+	return tipo_data
+
+
+# ============================================================================
 # ENDPOINTS - TIPOS DE DATA
 # ============================================================================
 
@@ -26,8 +66,15 @@ def criar_tipo_data(
     """
     Criar novo tipo de data.
     
-    **Parâmetros:**
-    - `nome`: Nome do tipo de data (ex: "Falta", "Não Letivo", "Letivo")
+    **Body:**
+    - `nome` (string): Nome do tipo de data. Exemplos: "Falta", "Não Letivo", "Letivo"
+    
+    **Restrições:**
+    - Nome é obrigatório e deve ser único
+    
+    **Respostas:**
+    - 201: Tipo de data criado com sucesso
+    - 400: Erro de validação
     """
     try:
         db_tipo_data = crud.criar_tipo_data(db, tipo_data)
@@ -37,7 +84,7 @@ def criar_tipo_data(
             message="Tipo de data criado com sucesso"
         )
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise ErroAoCriarTipoData(str(e))
 
 
 @router.get("/", response_model=schemas.GenericListResponse[schemas.TipoData])
@@ -47,11 +94,14 @@ def listar_tipos_data(
     db: Session = Depends(get_db)
 ):
     """
-    Listar todos os tipos de data cadastrados.
+    Listar todos os tipos de data cadastrados com paginação.
     
-    **Parâmetros:**
-    - `skip`: Número de registros a saltar (padrão: 0)
-    - `limit`: Número máximo de registros (padrão: 100, máximo: 1000)
+    **Query Parameters:**
+    - `skip` (int): Número de registros a saltar. Padrão: 0
+    - `limit` (int): Número máximo de registros por página. Padrão: 100, Máximo: 1000
+    
+    **Respostas:**
+    - 200: Lista de tipos retornada com sucesso
     """
     tipos_data = crud.obter_tipos_data(db, skip, limit)
     total = db.query(models.TipoData).count()
@@ -73,15 +123,17 @@ def obter_tipo_data(
     """
     Obter detalhes de um tipo de data específico.
     
-    **Parâmetros:**
-    - `id_tipo_data`: ID do tipo de data
+    **Path Parameters:**
+    - `id_tipo_data` (int): ID único do tipo de data
+    
+    **Respostas:**
+    - 200: Tipo de data retornado com sucesso
+    - 404: Tipo de data não encontrado
     """
-    db_tipo_data = crud.obter_tipo_data(db, id_tipo_data)
-    if not db_tipo_data:
-        raise HTTPException(status_code=404, detail="Tipo de data não encontrado")
+    tipo_data = _validar_tipo_data_existe(db, id_tipo_data)
     
     return schemas.GenericResponse(
-        data=db_tipo_data,
+        data=tipo_data,
         success=True
     )
 
@@ -93,15 +145,24 @@ def atualizar_tipo_data(
     db: Session = Depends(get_db)
 ):
     """
-    Atualizar um tipo de data.
+    Atualizar um tipo de data existente.
     
-    **Parâmetros:**
-    - `id_tipo_data`: ID do tipo de data a atualizar
-    - Body: dados atualizados
+    **Path Parameters:**
+    - `id_tipo_data` (int): ID único do tipo de data a atualizar
+    
+    **Body:**
+    - `nome` (string): Novo nome do tipo de data
+    
+    **Restrições:**
+    - Tipo de data deve existir
+    - Nome deve ser único
+    
+    **Respostas:**
+    - 200: Tipo de data atualizado com sucesso
+    - 400: Erro de validação
+    - 404: Tipo de data não encontrado
     """
-    db_tipo_data = crud.obter_tipo_data(db, id_tipo_data)
-    if not db_tipo_data:
-        raise HTTPException(status_code=404, detail="Tipo de data não encontrado")
+    _validar_tipo_data_existe(db, id_tipo_data)
     
     try:
         db_atualizado = crud.atualizar_tipo_data(db, id_tipo_data, tipo_data)
@@ -111,7 +172,7 @@ def atualizar_tipo_data(
             message="Tipo de data atualizado com sucesso"
         )
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise ErroAoAtualizarTipoData(str(e))
 
 
 @router.delete("/{id_tipo_data}", response_model=schemas.GenericResponse[dict])
@@ -120,14 +181,21 @@ def deletar_tipo_data(
     db: Session = Depends(get_db)
 ):
     """
-    Deletar um tipo de data.
+    Deletar um tipo de data existente.
     
-    **Parâmetros:**
-    - `id_tipo_data`: ID do tipo de data a deletar
+    **Path Parameters:**
+    - `id_tipo_data` (int): ID único do tipo de data a deletar
+    
+    **Restrições:**
+    - Tipo de data deve existir
+    - Não pode ter eventos associados para ser deletado
+    
+    **Respostas:**
+    - 200: Tipo de data deletado com sucesso
+    - 400: Erro ao deletar tipo de data
+    - 404: Tipo de data não encontrado
     """
-    db_tipo_data = crud.obter_tipo_data(db, id_tipo_data)
-    if not db_tipo_data:
-        raise HTTPException(status_code=404, detail="Tipo de data não encontrado")
+    _validar_tipo_data_existe(db, id_tipo_data)
     
     if crud.deletar_tipo_data(db, id_tipo_data):
         return schemas.GenericResponse(
@@ -135,4 +203,6 @@ def deletar_tipo_data(
             success=True,
             message="Tipo de data deletado com sucesso"
         )
-    raise HTTPException(status_code=400, detail="Erro ao deletar tipo de data")
+    
+    raise ErroAoDeletarTipoData()
+
