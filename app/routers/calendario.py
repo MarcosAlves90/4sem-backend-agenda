@@ -181,9 +181,12 @@ def listar_eventos_calendario(
     total = db.query(models.Calendario).filter(models.Calendario.ra == ra).count()
     
     if total == 0:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Nenhum evento encontrado para o RA {ra}"
+        return schemas.GenericListResponse(
+            data=[],
+            success=True,
+            total=0,
+            skip=skip,
+            limit=limit
         )
     
     return schemas.GenericListResponse(
