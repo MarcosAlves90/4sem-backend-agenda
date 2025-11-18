@@ -365,9 +365,9 @@ def atualizar_parcial_evento_calendario(
         validar_tipo_data_existe(db, calendario.id_tipo_data)
     
     # Se data ou RA foram alterados, verificar se já existe evento para essa combinação
-    if calendario.ra or calendario.data_evento:
-        ra_para_verificar = str(calendario.ra) if calendario.ra else str(db_evento.ra)
-        data_para_verificar = calendario.data_evento if calendario.data_evento else db_evento.data_evento
+    if calendario.ra is not None or calendario.data_evento is not None:
+        ra_para_verificar = str(calendario.ra) if calendario.ra is not None else str(db_evento.ra)
+        data_para_verificar = calendario.data_evento if calendario.data_evento is not None else db_evento.data_evento
         validar_evento_duplicado(db, ra_para_verificar, data_para_verificar, id_data_evento)
     
     try:
