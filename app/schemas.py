@@ -137,6 +137,7 @@ class Docente(BaseSchema):
     id_docente: int
     nome: str = Field(..., min_length=1, max_length=50)
     email: EmailStr
+    ra: Optional[RA] = None
 
 
 # ---- DISCENTE
