@@ -347,14 +347,8 @@ class Nota(BaseSchema):
 
 # ---- ANOTAÇÃO
 class AnotacaoCreate(BaseSchema):
-    ra: RA
-    titulo: str = Field(..., min_length=1, max_length=50)
-    anotacao: str = Field(..., min_length=1, max_length=255)
-
-    @field_validator("ra")
-    @classmethod
-    def validar_ra_campo(cls, v):
-        return validar_ra(v)
+	titulo: str = Field(..., min_length=1, max_length=50)
+	anotacao: str = Field(..., min_length=1, max_length=255)
 
 
 class Anotacao(BaseSchema):
