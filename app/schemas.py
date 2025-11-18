@@ -264,30 +264,21 @@ class DisciplinaDocente(BaseSchema):
 
 # ---- CALENDÁRIO
 class CalendarioCreate(BaseSchema):
-    ra: RA
-    data_evento: date
-    id_tipo_data: TipoDataEnum
-
-    @field_validator("ra")
-    @classmethod
-    def validar_ra_campo(cls, v):
-        return validar_ra(v)
+    """Schema para criar evento de calendário - RA é obtido do token autenticado"""
+    data_evento: date = Field(..., description="Data do evento (formato: YYYY-MM-DD)")
+    id_tipo_data: TipoDataEnum = Field(..., description="Tipo de data (1=Falta, 2=Não Letivo, 3=Letivo)")
 
 
 class CalendarioUpdate(BaseSchema):
-    ra: Optional[RA] = None
-    data_evento: Optional[date] = None
-    id_tipo_data: Optional[TipoDataEnum] = None
-
-    @field_validator("ra")
-    @classmethod
-    def validar_ra_campo(cls, v):
-        return validar_ra(v) if v is not None else None
+    """Schema para atualizar evento de calendário - RA é obtido do token autenticado"""
+    data_evento: Optional[date] = Field(None, description="Data do evento (formato: YYYY-MM-DD)")
+    id_tipo_data: Optional[TipoDataEnum] = Field(None, description="Tipo de data (1=Falta, 2=Não Letivo, 3=Letivo)")
 
 
 class Calendario(BaseSchema):
+    """Schema de resposta para evento de calendário"""
     id_data_evento: int
-    ra: RA
+    ra: RA = Field(..., description="RA do usuário (obtido do token)")
     data_evento: date
     id_tipo_data: TipoDataEnum
 
