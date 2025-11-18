@@ -50,9 +50,9 @@ NotaDecimal = Annotated[Optional[Decimal], Field(None, max_digits=4, decimal_pla
 
 class TipoDataEnum(IntEnum):
     """Tipos de datas no calendário acadêmico"""
-    LETIVO = 1
-    FALTA = 2
-    NAO_LETIVO = 3
+    FALTA = 1
+    NAO_LETIVO = 2
+    LETIVO = 3
 
 
 class DiaSemanaEnum(IntEnum):
@@ -106,7 +106,7 @@ class TipoDataCreate(BaseSchema):
 
 
 class TipoData(BaseSchema):
-    id_tipo_data: TipoDataEnum
+    id_tipo_data: int
     nome: str = Field(..., min_length=1, max_length=10)
 
 
@@ -137,6 +137,7 @@ class Docente(BaseSchema):
     id_docente: int
     nome: str = Field(..., min_length=1, max_length=50)
     email: EmailStr
+    ra: Optional[RA] = None
 
 
 # ---- DISCENTE
@@ -174,7 +175,7 @@ class UsuarioCreate(BaseSchema):
     nome: str = Field(..., min_length=1, max_length=50)
     email: EmailUsuario
     username: Username
-    id_instituicao: int
+    nome_instituicao: str = Field(..., min_length=1, max_length=80, description="Nome da instituição (será criada se não existir)")
     senha_hash: str = Field(..., min_length=6)
     dt_nascimento: Optional[date] = None
     tel_celular: Telefone = None
@@ -194,21 +195,20 @@ class UsuarioCreate(BaseSchema):
 
 
 class UsuarioUpdate(BaseSchema):
-    nome: Optional[str] = Field(None, min_length=1, max_length=50)
-    email: Optional[EmailUsuario] = None
-    username: Optional[Username] = None
-    dt_nascimento: Optional[date] = None
-    tel_celular: Telefone = None
-    id_curso: Optional[int] = None
-    modulo: Optional[int] = Field(None, ge=1, le=12)
-    bimestre: Optional[int] = None
+	nome: Optional[str] = Field(None, min_length=1, max_length=50)
+	email: Optional[EmailUsuario] = None
+	username: Optional[Username] = None
+	senha_hash: Optional[str] = Field(None, min_length=6, description="Senha (será hasheada automaticamente)")
+	dt_nascimento: Optional[date] = None
+	tel_celular: Telefone = None
+	nome_curso: Optional[str] = Field(None, min_length=1, max_length=80, description="Nome do curso (será criado se não existir)")
+	modulo: Optional[int] = Field(None, ge=1, le=12)
+	bimestre: Optional[int] = None
 
-    @field_validator("tel_celular")
-    @classmethod
-    def validar_tel(cls, v):
-        return validar_telefone(v)
-
-
+	@field_validator("tel_celular")
+	@classmethod
+	def validar_tel(cls, v):
+		return validar_telefone(v)
 class Usuario(BaseSchema):
     """Modelo sem expor senha_hash"""
     id_usuario: Optional[int] = None
@@ -217,9 +217,11 @@ class Usuario(BaseSchema):
     email: EmailUsuario
     username: Username
     id_instituicao: int
+    nome_instituicao: Optional[str] = None
     dt_nascimento: Optional[date] = None
     tel_celular: Telefone = None
     id_curso: Optional[int] = None
+    nome_curso: Optional[str] = None
     modulo: Optional[int] = Field(1, ge=1, le=12)
     bimestre: Optional[int] = None
 
@@ -263,19 +265,21 @@ class DisciplinaDocente(BaseSchema):
 
 # ---- CALENDÁRIO
 class CalendarioCreate(BaseSchema):
-    ra: RA
-    data_evento: date
-    id_tipo_data: TipoDataEnum
+    """Schema para criar evento de calendário - RA é obtido do token autenticado"""
+    data_evento: date = Field(..., description="Data do evento (formato: YYYY-MM-DD)")
+    id_tipo_data: TipoDataEnum = Field(..., description="Tipo de data (1=Falta, 2=Não Letivo, 3=Letivo)")
 
-    @field_validator("ra")
-    @classmethod
-    def validar_ra_campo(cls, v):
-        return validar_ra(v)
+
+class CalendarioUpdate(BaseSchema):
+    """Schema para atualizar evento de calendário - RA é obtido do token autenticado"""
+    data_evento: Optional[date] = Field(None, description="Data do evento (formato: YYYY-MM-DD)")
+    id_tipo_data: Optional[TipoDataEnum] = Field(None, description="Tipo de data (1=Falta, 2=Não Letivo, 3=Letivo)")
 
 
 class Calendario(BaseSchema):
+    """Schema de resposta para evento de calendário"""
     id_data_evento: int
-    ra: RA
+    ra: RA = Field(..., description="RA do usuário (obtido do token)")
     data_evento: date
     id_tipo_data: TipoDataEnum
 
@@ -364,6 +368,33 @@ class Anotacao(BaseSchema):
     @classmethod
     def validar_ra_campo(cls, v):
         return validar_ra(v)
+
+
+# ============================================================================
+# SCHEMAS - AUTENTICAÇÃO (JWT)
+# ============================================================================
+
+class Login(BaseSchema):
+    """Credenciais para login"""
+    username: Username
+    senha_hash: str = Field(..., min_length=6)
+
+
+class Token(BaseSchema):
+    """Response com token JWT
+
+    Observação: `refresh_token` é opcional aqui porque o refresh token
+    será enviado preferencialmente via cookie HttpOnly. Mantemos o campo
+    para compatibilidade em casos onde seja necessário retorná-lo no body.
+    """
+    access_token: str
+    refresh_token: Optional[str] = None
+    token_type: str = "bearer"
+
+
+class RefreshTokenRequest(BaseSchema):
+    """Request para renovar access_token"""
+    refresh_token: str
 
 
 # ============================================================================

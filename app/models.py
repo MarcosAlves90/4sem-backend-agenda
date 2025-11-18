@@ -52,7 +52,7 @@ class Usuario(Base):
 
 
 class TipoData(Base):
-    """Modelo de Tipo de Data (Letivo, Falta, Não Letivo)"""
+    """Modelo de Tipo de Data (Falta, Não Letivo, Letivo)"""
     __tablename__ = "tipo_data"
 
     id_tipo_data = Column(Integer, primary_key=True, index=True)
@@ -137,20 +137,20 @@ class Horario(Base):
 
 
 class Docente(Base):
-    """Modelo de Docente (Professor)"""
-    __tablename__ = "docente"
-    __table_args__ = (
-        UniqueConstraint("email", name="uq_docente_email"),
-    )
+	"""Modelo de Docente (Professor)"""
+	__tablename__ = "docente"
+	__table_args__ = (
+		UniqueConstraint("email", name="uq_docente_email"),
+	)
 
-    id_docente = Column(Integer, primary_key=True, index=True)
-    nome = Column(String(50), nullable=False)
-    email = Column(String(40), nullable=False, index=True)
+	id_docente = Column(Integer, primary_key=True, index=True)
+	nome = Column(String(50), nullable=False)
+	email = Column(String(40), nullable=False, index=True)
+	ra = Column(String(13), ForeignKey("usuario.ra"), nullable=False, index=True)
 
-    # Relacionamento
-    disciplinas = relationship("DisciplinaDocente", back_populates="docente")
-
-
+	# Relacionamentos
+	usuario = relationship("Usuario", foreign_keys=[ra])
+	disciplinas = relationship("DisciplinaDocente", back_populates="docente")
 class DisciplinaDocente(Base):
     """Modelo Associativo: Disciplina-Docente"""
     __tablename__ = "disciplina_docente"
