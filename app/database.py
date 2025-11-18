@@ -17,7 +17,10 @@ else:
 
 # Configure a DATABASE_URL via env var. Exemplo:
 # postgresql://<user>:<password>@<host>:<port>/<database>
-DATABASE_URL = "sqlite:///banco.db"
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://postgres:password@localhost:5432/agenda_db",
+)
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
