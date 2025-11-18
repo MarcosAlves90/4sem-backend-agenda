@@ -50,9 +50,9 @@ NotaDecimal = Annotated[Optional[Decimal], Field(None, max_digits=4, decimal_pla
 
 class TipoDataEnum(IntEnum):
     """Tipos de datas no calendário acadêmico"""
-    LETIVO = 1
-    FALTA = 2
-    NAO_LETIVO = 3
+    FALTA = 1
+    NAO_LETIVO = 2
+    LETIVO = 3
 
 
 class DiaSemanaEnum(IntEnum):
@@ -106,7 +106,7 @@ class TipoDataCreate(BaseSchema):
 
 
 class TipoData(BaseSchema):
-    id_tipo_data: TipoDataEnum
+    id_tipo_data: int
     nome: str = Field(..., min_length=1, max_length=10)
 
 
@@ -272,6 +272,17 @@ class CalendarioCreate(BaseSchema):
     @classmethod
     def validar_ra_campo(cls, v):
         return validar_ra(v)
+
+
+class CalendarioUpdate(BaseSchema):
+    ra: Optional[RA] = None
+    data_evento: Optional[date] = None
+    id_tipo_data: Optional[TipoDataEnum] = None
+
+    @field_validator("ra")
+    @classmethod
+    def validar_ra_campo(cls, v):
+        return validar_ra(v) if v is not None else None
 
 
 class Calendario(BaseSchema):

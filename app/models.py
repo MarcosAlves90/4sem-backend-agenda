@@ -52,7 +52,7 @@ class Usuario(Base):
 
 
 class TipoData(Base):
-    """Modelo de Tipo de Data (Letivo, Falta, Não Letivo)"""
+    """Modelo de Tipo de Data (Falta, Não Letivo, Letivo)"""
     __tablename__ = "tipo_data"
 
     id_tipo_data = Column(Integer, primary_key=True, index=True)
