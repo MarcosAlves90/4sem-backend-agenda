@@ -174,7 +174,7 @@ class UsuarioCreate(BaseSchema):
     nome: str = Field(..., min_length=1, max_length=50)
     email: EmailUsuario
     username: Username
-    id_instituicao: int
+    nome_instituicao: str = Field(..., min_length=1, max_length=80, description="Nome da instituição (será criada se não existir)")
     senha_hash: str = Field(..., min_length=6)
     dt_nascimento: Optional[date] = None
     tel_celular: Telefone = None
@@ -194,21 +194,20 @@ class UsuarioCreate(BaseSchema):
 
 
 class UsuarioUpdate(BaseSchema):
-    nome: Optional[str] = Field(None, min_length=1, max_length=50)
-    email: Optional[EmailUsuario] = None
-    username: Optional[Username] = None
-    dt_nascimento: Optional[date] = None
-    tel_celular: Telefone = None
-    id_curso: Optional[int] = None
-    modulo: Optional[int] = Field(None, ge=1, le=12)
-    bimestre: Optional[int] = None
+	nome: Optional[str] = Field(None, min_length=1, max_length=50)
+	email: Optional[EmailUsuario] = None
+	username: Optional[Username] = None
+	senha_hash: Optional[str] = Field(None, min_length=6, description="Senha (será hasheada automaticamente)")
+	dt_nascimento: Optional[date] = None
+	tel_celular: Telefone = None
+	nome_curso: Optional[str] = Field(None, min_length=1, max_length=80, description="Nome do curso (será criado se não existir)")
+	modulo: Optional[int] = Field(None, ge=1, le=12)
+	bimestre: Optional[int] = None
 
-    @field_validator("tel_celular")
-    @classmethod
-    def validar_tel(cls, v):
-        return validar_telefone(v)
-
-
+	@field_validator("tel_celular")
+	@classmethod
+	def validar_tel(cls, v):
+		return validar_telefone(v)
 class Usuario(BaseSchema):
     """Modelo sem expor senha_hash"""
     id_usuario: Optional[int] = None
@@ -217,9 +216,11 @@ class Usuario(BaseSchema):
     email: EmailUsuario
     username: Username
     id_instituicao: int
+    nome_instituicao: Optional[str] = None
     dt_nascimento: Optional[date] = None
     tel_celular: Telefone = None
     id_curso: Optional[int] = None
+    nome_curso: Optional[str] = None
     modulo: Optional[int] = Field(1, ge=1, le=12)
     bimestre: Optional[int] = None
 
@@ -375,6 +376,33 @@ class Anotacao(BaseSchema):
     @classmethod
     def validar_ra_campo(cls, v):
         return validar_ra(v)
+
+
+# ============================================================================
+# SCHEMAS - AUTENTICAÇÃO (JWT)
+# ============================================================================
+
+class Login(BaseSchema):
+    """Credenciais para login"""
+    username: Username
+    senha_hash: str = Field(..., min_length=6)
+
+
+class Token(BaseSchema):
+    """Response com token JWT
+
+    Observação: `refresh_token` é opcional aqui porque o refresh token
+    será enviado preferencialmente via cookie HttpOnly. Mantemos o campo
+    para compatibilidade em casos onde seja necessário retorná-lo no body.
+    """
+    access_token: str
+    refresh_token: Optional[str] = None
+    token_type: str = "bearer"
+
+
+class RefreshTokenRequest(BaseSchema):
+    """Request para renovar access_token"""
+    refresh_token: str
 
 
 # ============================================================================
