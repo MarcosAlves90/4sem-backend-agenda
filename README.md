@@ -1,126 +1,92 @@
 # API Agenda Acadêmica
 
-API REST para gerenciamento de agenda acadêmica de alunos. Desenvolvida com FastAPI, SQLAlchemy e PostgreSQL.
+API REST para gerenciamento de agenda acadêmica de alunos com autenticação JWT e migrations automáticas.
 
-## Pré-requisitos
+## Quick Start
 
-- Python 3.10+
-- pip ou poetry
-- PostgreSQL (opcional - pode usar SQLite para desenvolvimento)
-- Git
-
-## Instalação e Execução
-
-### 1. Clone o repositório
-
-```bash
-git clone https://github.com/MarcosAlves90/4sem-backend-agenda.git
-cd 4sem-backend-agenda
-```
-
-### 2. Crie um ambiente virtual
-
-**Windows:**
+### 1. Setup
 
 ```bash
 python -m venv .venv
-.venv\Scripts\activate
-```
+# Windows: .venv\Scripts\activate
+# Linux/macOS: source .venv/bin/activate
 
-**Linux/macOS:**
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-### 3. Instale as dependências
-
-```bash
 pip install -r requirements.txt
 ```
 
-### 4. Configure as variáveis de ambiente
+### 2. Configuração
 
-Copie o arquivo `.env.example` para `.env`:
-
-```bash
-cp .env.example .env
-```
-
-Edite `.env` conforme necessário (padrão já usa SQLite):
+Crie arquivo `.env`:
 
 ```env
-DATABASE_URL=sua-url-do-banco
-SECRET_KEY=sua-chave-secreta-aqui
+DATABASE_URL=postgresql://user:password@host:port/database
+SECRET_KEY=sua-chave-secreta-gerada
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_DAYS=7
 ```
 
-### 5. Crie as tabelas
+### 3. Inicializar BD
 
-Descomente a linha em `app/main.py`:
+Descomente em `app/main.py`:
 
 ```python
 Base.metadata.create_all(bind=engine)
 ```
 
-Então execute uma vez e recomente.
+Execute uma vez e recomente.
 
-### 6. Execute a aplicação
+### 4. Executar
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-A API estará disponível em: [`http://localhost:8000`](http://localhost:8000)
+API: [`http://localhost:8000`](http://localhost:8000)  
+Docs: [`http://localhost:8000/docs`](http://localhost:8000/docs)
 
-## Documentação
+## Rotas
 
-Acesse a documentação interativa:
+- `GET /api/v1/health` - Health check
+- `GET /` - Página inicial
+- `/api/v1/usuario` - Gerenciamento de usuários
+- `/api/v1/docentes` - Gerenciamento de docentes
+- `/api/v1/discentes` - Gerenciamento de discentes
+- `/api/v1/disciplinas` - Gerenciamento de disciplinas
+- `/api/v1/tipo-data` - Tipos de datas
+- `/api/v1/calendario` - Calendário acadêmico
+- `/app/v1/anotacao` - Gerenciamento de anotações
 
-- **Swagger UI:** [`http://localhost:8000/docs`](http://localhost:8000/docs)
-- **ReDoc:** [`http://localhost:8000/redoc`](http://localhost:8000/redoc)
-- **Health Check:** [`http://localhost:8000/api/v1/health`](http://localhost:8000/api/v1/health)
+## Stack
 
-## Estrutura do Projeto
-
-```text
-4sem-backend-agenda/
-├── app/
-│   ├── main.py              # Aplicação principal
-│   ├── database.py          # Configuração do BD
-│   ├── models.py            # Modelos ORM
-│   ├── crud.py              # Operações CRUD
-│   ├── schemas.py           # Schemas Pydantic
-│   └── routers/             # Rotas da API
-├── templates/
-│   └── index.html           # Página inicial
-├── requirements.txt         # Dependências
-├── README.md                # Este arquivo
-└── .gitignore
-```
-
-## Tecnologias
-
-- **FastAPI** - Framework web assíncrono
-- **SQLAlchemy** - ORM para banco de dados
+- **FastAPI** - Framework web moderno
+- **SQLAlchemy** - ORM
+- **PostgreSQL** - Banco de dados
 - **Pydantic** - Validação de dados
-- **Uvicorn** - ASGI server
-- **Tailwind CSS** - Estilização (frontend)
+- **JWT** - Autenticação
+- **Alembic** - Migrations
 
-## Variáveis de Ambiente
+## Estrutura
 
-Um arquivo `.env.example` é fornecido como template. Para usar:
-
-1. Copie para `.env`:
-
-```bash
-cp .env.example .env
+```txt
+app/
+├── main.py          # App e rotas principais
+├── database.py      # Conexão BD
+├── models.py        # Modelos ORM
+├── crud.py          # Operações
+├── schemas.py       # Validators Pydantic
+├── auth.py          # Autenticação JWT
+└── routers/         # Endpoints
+    ├── anotacao.py
+    ├── calendario.py
+    ├── discentes.py
+    ├── disciplinas.py
+    ├── docentes.py
+    ├── health.py
+    ├── tipo_data.py
+    └── usuario.py
 ```
-
-1. Configure as variáveis conforme seu ambiente:
-   - `DATABASE_URL` - URL de conexão do banco (SQLite ou PostgreSQL)
-   - `SECRET_KEY` - Chave secreta para criptografia (gere com `openssl rand -hex 32`)
 
 ## Licença
 
-Este projeto está sob licença MIT.
+MIT

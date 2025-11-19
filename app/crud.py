@@ -373,6 +373,23 @@ def atualizar_discente(
         db.rollback()
         raise
 
+def atualizar_discente_parcial(
+    db: Session, id_discente: int, discente: schemas.DiscenteUpdate
+) -> Optional[models.Discente]:
+    """Atualizar discente (apenas campos fornecidos - PATCH)."""
+    try:
+        db_discente = obter_discente(db, id_discente)
+        if db_discente:
+            # Atualizar apenas campos não-nulos
+            for key, value in discente.model_dump(exclude_unset=True).items():
+                setattr(db_discente, key, value)
+            db.commit()
+            db.refresh(db_discente)
+        return db_discente
+    except IntegrityError:
+        db.rollback()
+        raise
+
 
 def deletar_discente(db: Session, id_discente: int) -> bool:
     """Deletar discente."""
