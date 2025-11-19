@@ -60,8 +60,13 @@ CREATE TABLE IF NOT EXISTS usuario (
 CREATE TABLE IF NOT EXISTS docente (
     id_docente SERIAL PRIMARY KEY,
     nome VARCHAR(50) NOT NULL,
-    email VARCHAR(40) NOT NULL UNIQUE
+    email VARCHAR(40) NOT NULL UNIQUE,
+    ra VARCHAR(13) NOT NULL,
+    FOREIGN KEY (ra) REFERENCES usuario(ra) ON DELETE CASCADE
 );
+
+-- Índice para melhorar buscas por RA nos docentes
+CREATE INDEX IF NOT EXISTS idx_docente_ra ON docente(ra);
 
 -- Tabela de Discentes (Alunos sem login)
 CREATE TABLE IF NOT EXISTS discente (
@@ -70,7 +75,9 @@ CREATE TABLE IF NOT EXISTS discente (
     email VARCHAR(40) NOT NULL UNIQUE,
     tel_celular VARCHAR(15),
     id_curso INTEGER,
-    FOREIGN KEY (id_curso) REFERENCES curso(id_curso) ON DELETE SET NULL
+    ra VARCHAR(13) NOT NULL,
+    FOREIGN KEY (id_curso) REFERENCES curso(id_curso) ON DELETE SET NULL,
+    FOREIGN KEY (ra) REFERENCES usuario(ra) ON DELETE CASCADE
 );
 
 -- ============================================================================
@@ -171,6 +178,7 @@ CREATE INDEX IF NOT EXISTS idx_usuario_ra ON usuario(ra);
 CREATE INDEX IF NOT EXISTS idx_curso_instituicao ON curso(id_instituicao);
 CREATE INDEX IF NOT EXISTS idx_docente_email ON docente(email);
 CREATE INDEX IF NOT EXISTS idx_discente_email ON discente(email);
+CREATE INDEX IF NOT EXISTS idx_discente_ra ON discente(ra);
 
 -- ============================================================================
 -- DADOS INICIAIS (OPCIONAL)

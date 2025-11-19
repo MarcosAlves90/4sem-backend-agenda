@@ -21,3 +21,12 @@ python-dotenv
 
 # Jinja2: Motor de templates para Python, usado para renderizar templates HTML
 jinja2
+
+# bcrypt: Biblioteca para hashing seguro de senhas
+bcrypt
+
+# PyJWT: Biblioteca para criação e verificação de tokens JWT
+pyjwt
+
+# Alembic: Ferramenta de migração de banco de dados para SQLAlchemy
+alembic
