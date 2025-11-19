@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .database import engine, Base
 from . import models  # noqa: F401 - Necessário para registrar os modelos no SQLAlchemy
-from .routers import health, calendario, tipo_data, usuario, docentes, anotacao
+from .routers import health, calendario, tipo_data, usuario, docentes, anotacao, discentes
 
 # ============================================================================
 # INICIALIZAÇÃO DO BANCO DE DADOS
@@ -51,6 +51,7 @@ templates = Jinja2Templates(directory="templates")
 # ============================================================================
 
 app.include_router(health.router, prefix="/api/v1/health")
+app.include_router(discentes.router, prefix="/api/v1/discentes")
 app.include_router(anotacao.router, prefix="/app/v1/anotacao")
 app.include_router(docentes.router, prefix="/api/v1") 
 app.include_router(usuario.router, prefix="/api/v1/usuario")
