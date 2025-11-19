@@ -159,6 +159,19 @@ class Discente(BaseSchema):
     email: EmailStr
     tel_celular: Telefone = None
     id_curso: Optional[int] = None
+    ra: Optional[RA] = None
+
+    @field_validator("tel_celular")
+    @classmethod
+    def validar_tel(cls, v):
+        return validar_telefone(v)
+    
+class DiscenteUpdate(BaseSchema):
+    """Schema para atualização parcial (PATCH) de Discente"""
+    nome: Optional[str] = Field(None, min_length=1, max_length=50)
+    email: Optional[EmailStr] = None
+    tel_celular: Telefone = None
+    id_curso: Optional[int] = None
 
     @field_validator("tel_celular")
     @classmethod
