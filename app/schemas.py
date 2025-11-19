@@ -159,6 +159,7 @@ class Discente(BaseSchema):
     email: EmailStr
     tel_celular: Telefone = None
     id_curso: Optional[int] = None
+    ra: Optional[RA] = None
 
     @field_validator("tel_celular")
     @classmethod
