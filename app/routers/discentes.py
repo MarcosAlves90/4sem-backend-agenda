@@ -1,77 +1,280 @@
-from pydantic import BaseModel, Field, EmailStr
-from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import Optional
+from pydantic import BaseModel, Field, EmailStr
 
 from ..database import get_db
 from .. import crud, models, schemas
+from ..auth import verificar_token
 
-# Router config
+# ============================================================================
+# CONFIGURAÇÃO DO ROUTER
+# ============================================================================
+
 router = APIRouter(
-    prefix="/discentes",
-    tags=["Discentes"],
-    responses={404: {"description": "Not found"}},
+	prefix="/discentes",
+	tags=["Discentes"],
+	responses={404: {"description": "Não encontrado"}},
 )
 
+# ============================================================================
+# EXCEÇÕES CUSTOMIZADAS
+# ============================================================================
 
-# Endpoints
+class DiscenteNaoEncontrado(HTTPException):
+	"""Discente não encontrado"""
+	def __init__(self):
+		super().__init__(status_code=404, detail="Discente não encontrado")
+
+
+class EmailDuplicado(HTTPException):
+	"""Email já cadastrado para outro discente"""
+	def __init__(self):
+		super().__init__(status_code=400, detail="Email já cadastrado para outro discente")
+
+
+class ErroAoCriarDiscente(HTTPException):
+	"""Erro ao criar discente"""
+	def __init__(self, detail: str):
+		super().__init__(status_code=400, detail=detail)
+
+
+class ErroAoAtualizarDiscente(HTTPException):
+	"""Erro ao atualizar discente"""
+	def __init__(self, detail: str):
+		super().__init__(status_code=400, detail=detail)
+
+
+class ErroAoDeletarDiscente(HTTPException):
+	"""Erro ao deletar discente"""
+	def __init__(self):
+		super().__init__(status_code=400, detail="Erro ao deletar discente")
+
+
+class PermissaoNegada(HTTPException):
+	"""Usuário não tem permissão para acessar este discente"""
+	def __init__(self):
+		super().__init__(status_code=403, detail="Você não tem permissão para acessar este discente")
+
+
+# ============================================================================
+# VALIDADORES (Responsabilidade Única)
+# ============================================================================
+
+def _validar_discente_existe(db: Session, id_discente: int) -> models.Discente:
+	"""Valida se discente existe. Retorna discente ou lança exceção."""
+	discente = crud.obter_discente(db, id_discente)
+	if not discente:
+		raise DiscenteNaoEncontrado()
+	return discente
+
+
+def _validar_discente_pertence_usuario(
+	db: Session,
+	id_discente: int,
+	ra_usuario: str
+) -> models.Discente:
+	"""Valida se discente existe e pertence ao usuário. Retorna discente ou lança exceção."""
+	discente = _validar_discente_existe(db, id_discente)
+
+	# Verificar se o discente pertence ao usuário autenticado (comparar por RA)
+	try:
+		ra_discente = str(discente.ra) if hasattr(discente, 'ra') else None
+		if ra_discente and ra_discente != ra_usuario:
+			raise PermissaoNegada()
+	except (ValueError, TypeError, AttributeError):
+		# Se não conseguir comparar, verifica se tem ra
+		if hasattr(discente, 'ra') and discente.ra is not None:
+			raise PermissaoNegada()
+
+	return discente
+
+
+def _validar_email_unico(db: Session, email: str, id_discente_atual: int | None = None) -> None:
+	"""Valida se email já está em uso por outro discente. Lança exceção se duplicado."""
+	discente_existente = crud.obter_discente_por_email(db, email)
+
+	if discente_existente is None:
+		return
+
+	# Se o email pertence ao mesmo discente, não é duplicação
+	if id_discente_atual is not None:
+		try:
+			id_existente = int(str(discente_existente.id_discente))
+			if id_existente == id_discente_atual:
+				return
+		except (ValueError, TypeError):
+			pass
+
+	raise EmailDuplicado()
+
+
+# ============================================================================
+# ENDPOINTS (CRUD)
+# ============================================================================
+
+@router.post("/", response_model=schemas.GenericResponse[schemas.Discente], status_code=201)
+def criar_discente(
+	discente: schemas.DiscenteCreate,
+	usuario_autenticado: models.Usuario = Depends(verificar_token),
+	db: Session = Depends(get_db)
+):
+	"""
+	Criar novo discente.
+
+	**Autenticação:**
+	- Requer token JWT no header `Authorization: Bearer <token>`
+
+	**Body:**
+	- `nome` (string): Nome do discente (1-50 caracteres)
+	- `email` (string): Email do discente (deve ser único)
+	- `tel_celular` (string, opcional): Telefone (máx. 15 caracteres)
+	- `id_curso` (int, opcional): ID do curso
+
+	**Restrições:**
+	- Email deve ser único na base de dados
+	- Discente será associado ao RA do usuário autenticado
+
+	**Respostas:**
+	- 201: Discente criado com sucesso
+	- 400: Erro de validação ou email duplicado
+	- 401: Token ausente ou inválido
+	"""
+	try:
+		_validar_email_unico(db, discente.email)
+
+		# Obter RA do usuário autenticado
+		ra_usuario = usuario_autenticado.ra if hasattr(usuario_autenticado, 'ra') else usuario_autenticado
+
+		# Criar discente diretamente com RA no banco de dados
+		db_discente = models.Discente(
+			nome=discente.nome,
+			email=discente.email,
+			tel_celular=discente.tel_celular,
+			id_curso=discente.id_curso,
+			ra=ra_usuario
+		)
+		db.add(db_discente)
+		db.commit()
+		db.refresh(db_discente)
+
+		return schemas.GenericResponse(
+			data=db_discente,
+			success=True,
+			message="Discente criado com sucesso"
+		)
+	except EmailDuplicado:
+		raise
+	except Exception as e:
+		raise ErroAoCriarDiscente(str(e))
+
 
 @router.get("/", response_model=schemas.GenericListResponse[schemas.Discente])
-def get_all_students(
-    skip : int = Query(0, ge=0, description="Números de itens para pular"), 
-    limit : int = Query(100, ge=0, le=1000, description="Números maximo de itens para retornar"),
-    db: Session = Depends(get_db)
+def listar_discentes(
+	usuario_autenticado: models.Usuario = Depends(verificar_token),
+	skip: int = Query(0, ge=0, description="Paginação: saltar registros"),
+	limit: int = Query(100, ge=1, le=1000, description="Limite de registros"),
+	db: Session = Depends(get_db)
 ):
-    """
-    Retorna todos os discentes com paginação.
-        - **skip**: Numero de items para pular
-        - **limit**: Numero maximo de items para retornar
-    """
-    students = crud.obter_discentes(db, skip=skip, limit=limit)
-    total = db.query(models.Discente).count()
-    return schemas.GenericListResponse(
-        data=students,
-        success=True,
-        total=total,
-        skip=skip,
-        limit=limit,
-        message=f"{len(students)} Discentes retornados com sucesso"
-        )
+	"""
+	Listar todos os discentes do usuário autenticado com paginação.
 
-@router.get("/{student_id}", response_model=schemas.GenericResponse[schemas.Discente])
-def get_student(student_id: int, db: Session = Depends(get_db)):
-    """
-    Retorna um discente pelo ID.
-        - **student_id**: O ID do discente a ser retornado
-    """
-    student = crud.obter_discente(db, student_id)
-    if not student:
-        raise HTTPException(status_code=404, detail="Discente não encontrado")
-    return schemas.GenericResponse(
-        data=student,
-        success=True,
-        message="Discente retornado com sucesso"
-    )
+	**Autenticação:**
+	- Requer token JWT no header `Authorization: Bearer <token>`
 
-@router.post("/", response_model=schemas.GenericResponse[schemas.Discente])
-def create_student(student: schemas.DiscenteCreate, db: Session = Depends(get_db)):
-    """
-    Cria um novo discente.
-        - **student**: O discente a ser criado
-    """
-    try:
-        student_exists = crud.obter_discente_por_email(db, email=student.email)
-        
-        if student_exists:
-            raise HTTPException(status_code=400, detail="Email já cadastrado")
-        
-        
-        new_student = crud.criar_discente(db=db, discente=student)
-        return schemas.GenericResponse(
-            data=new_student,
-            success=True,
-            message="Discente criado com sucesso"
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+	**Query Parameters:**
+	- `skip` (int): Número de registros a saltar. Padrão: 0
+	- `limit` (int): Número máximo de registros por página. Padrão: 100, Máximo: 1000
+
+	**Restrições:**
+	- Usuário só pode listar seus próprios discentes
+
+	**Respostas:**
+	- 200: Lista de discentes retornada com sucesso
+	- 401: Token ausente ou inválido
+	"""
+	# Obter RA do usuário autenticado
+	ra_usuario = usuario_autenticado.ra if hasattr(usuario_autenticado, 'ra') else usuario_autenticado
+
+	# Listar apenas discentes do usuário autenticado
+	discentes = db.query(models.Discente).filter(models.Discente.ra == ra_usuario).offset(skip).limit(limit).all()
+	total = db.query(models.Discente).filter(models.Discente.ra == ra_usuario).count()
+
+	return schemas.GenericListResponse(
+		data=discentes,
+		total=total,
+		skip=skip,
+		limit=limit,
+		success=True
+	)
+
+
+@router.get("/{id_discente}", response_model=schemas.GenericResponse[schemas.Discente])
+def obter_discente(
+	id_discente: int,
+	usuario_autenticado: models.Usuario = Depends(verificar_token),
+	db: Session = Depends(get_db)
+):
+	"""
+	Obter detalhes de um discente específico.
+
+	**Autenticação:**
+	- Requer token JWT no header `Authorization: Bearer <token>`
+
+	**Path Parameters:**
+	- `id_discente` (int): ID único do discente
+
+	**Restrições:**
+	- Usuário só pode acessar seus próprios discentes
+
+	**Respostas:**
+	- 200: Discente retornado com sucesso
+	- 403: Usuário não tem permissão para acessar este discente
+	- 404: Discente não encontrado
+	- 401: Token ausente ou inválido
+	"""
+	ra_usuario = usuario_autenticado.ra if hasattr(usuario_autenticado, 'ra') else usuario_autenticado
+	discente = _validar_discente_pertence_usuario(db, id_discente, ra_usuario)
+	return schemas.GenericResponse(data=discente, success=True)
+
+
+@router.get("/email/{email}", response_model=schemas.GenericResponse[schemas.Discente])
+def obter_discente_por_email(
+	email: str,
+	usuario_autenticado: models.Usuario = Depends(verificar_token),
+	db: Session = Depends(get_db)
+):
+	"""
+	Obter discente por email.
+
+	**Autenticação:**
+	- Requer token JWT no header `Authorization: Bearer <token>`
+
+	**Path Parameters:**
+	- `email` (string): Email do discente
+
+	**Restrições:**
+	- Usuário só pode acessar seus próprios discentes
+
+	**Respostas:**
+	- 200: Discente retornado com sucesso
+	- 403: Usuário não tem permissão para acessar este discente
+	- 404: Discente não encontrado
+	- 401: Token ausente ou inválido
+	"""
+	ra_usuario = usuario_autenticado.ra if hasattr(usuario_autenticado, 'ra') else usuario_autenticado
+	discente = crud.obter_discente_por_email(db, email)
+
+	if not discente:
+		raise DiscenteNaoEncontrado()
+
+	# Verificar se pertence ao usuário (comparar por RA)
+	try:
+		ra_discente = str(discente.ra) if hasattr(discente, 'ra') else None
+		if ra_discente and ra_discente != ra_usuario:
+			raise PermissaoNegada()
+	except (ValueError, TypeError, AttributeError):
+		if hasattr(discente, 'ra') and discente.ra is not None:
+			raise PermissaoNegada()
+
+	return schemas.GenericResponse(data=discente, success=True)
