@@ -357,6 +357,12 @@ class Nota(BaseSchema):
     def validar_ra_campo(cls, v):
         return validar_ra(v)
 
+#atualizar nota
+class NotaUpdate(BaseSchema):
+    ra: Optional[RA] = None
+    id_disciplina: Optional[int] = None
+    bimestre: Optional[int] = None
+    nota: NotaDecimal = None
 
 # ---- ANOTAÇÃO
 class AnotacaoCreate(BaseSchema):
