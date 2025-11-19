@@ -51,7 +51,6 @@ templates = Jinja2Templates(directory="templates")
 # ============================================================================
 
 app.include_router(health.router, prefix="/api/v1/health")
-app.include_router(docentes.router, prefix="/api/v1")
 app.include_router(usuario.router, prefix="/api/v1/usuario")
 app.include_router(disciplinas.router, prefix="/api/v1/disciplinas")
 app.include_router(notas.router, prefix="/api/v1/notas")
