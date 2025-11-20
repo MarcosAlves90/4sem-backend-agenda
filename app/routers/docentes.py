@@ -12,7 +12,6 @@ from ..auth import verificar_token
 # ============================================================================
 
 router = APIRouter(
-	prefix="/docentes",
 	tags=["Docentes"],
 	responses={404: {"description": "Não encontrado"}},
 )

@@ -117,6 +117,12 @@ class DisciplinaCreate(BaseSchema):
 class Disciplina(BaseSchema):
     id_disciplina: int
     nome: str = Field(..., min_length=1, max_length=80)
+    user_ra: RA
+
+    @field_validator("user_ra")
+    @classmethod
+    def validar_user_ra(cls, v):
+        return validar_ra(v)
 
 
 class CursoCreate(BaseSchema):
@@ -250,31 +256,8 @@ class Usuario(BaseSchema):
 
 
 # ============================================================================
-# SCHEMAS - TABELAS ASSOCIATIVAS E RELACIONAIS
+# SCHEMAS - TABELAS RELACIONAIS
 # ============================================================================
-
-# ---- CURSO_DISCIPLINA
-class CursoDisciplinaCreate(BaseSchema):
-    id_curso: int
-    id_disciplina: int
-    modulo: int = Field(..., ge=1, le=12)
-
-
-class CursoDisciplina(BaseSchema):
-    id_curso: int
-    id_disciplina: int
-    modulo: int = Field(..., ge=1, le=12)
-
-
-class DisciplinaDocenteCreate(BaseSchema):
-    id_disciplina: int
-    id_docente: int
-
-
-class DisciplinaDocente(BaseSchema):
-    id_disciplina: int
-    id_docente: int
-
 
 # ---- CALENDÁRIO
 class CalendarioCreate(BaseSchema):
@@ -357,6 +340,12 @@ class Nota(BaseSchema):
     def validar_ra_campo(cls, v):
         return validar_ra(v)
 
+#atualizar nota
+class NotaUpdate(BaseSchema):
+    ra: Optional[RA] = None
+    id_disciplina: Optional[int] = None
+    bimestre: Optional[int] = None
+    nota: NotaDecimal = None
 
 # ---- ANOTAÇÃO
 class AnotacaoCreate(BaseSchema):
@@ -416,10 +405,49 @@ class UsuarioDetail(Usuario):
 
 class CursoDetail(Curso):
     """Modelo com disciplinas do curso"""
-    disciplinas: List[CursoDisciplina] = []
+    disciplinas: List["CursoDisciplinaDetail"] = []
 
 
 class DisciplinaDetail(Disciplina):
-    """Modelo com docentes e cursos"""
-    docentes: List[Docente] = []
-    cursos: List[Curso] = []
+	"""Modelo com docentes e cursos"""
+	docentes: List[Docente] = []
+	cursos: List[Curso] = []
+
+
+# ============================================================================
+# SCHEMAS - TABELAS ASSOCIATIVAS
+# ============================================================================
+
+class CursoDisciplinaCreate(BaseSchema):
+	"""Schema para criar associação Curso-Disciplina"""
+	id_curso: int
+	id_disciplina: int
+	modulo: int = Field(..., ge=1, le=12, description="Módulo (1-12)")
+
+
+class CursoDisciplina(CursoDisciplinaCreate):
+	"""Schema completo para Curso-Disciplina"""
+	pass
+
+
+class CursoDisciplinaDetail(CursoDisciplina):
+	"""Modelo com dados relacionados"""
+	curso: Optional[Curso] = None
+	disciplina: Optional[Disciplina] = None
+
+
+class DisciplinaDocenteCreate(BaseSchema):
+	"""Schema para criar associação Disciplina-Docente"""
+	id_disciplina: int
+	id_docente: int
+
+
+class DisciplinaDocente(DisciplinaDocenteCreate):
+	"""Schema completo para Disciplina-Docente"""
+	pass
+
+
+class DisciplinaDocenteDetail(DisciplinaDocente):
+	"""Modelo com dados relacionados"""
+	disciplina: Optional[Disciplina] = None
+	docente: Optional[Docente] = None

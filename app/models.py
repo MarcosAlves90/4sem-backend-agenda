@@ -82,8 +82,10 @@ class Disciplina(Base):
 
     id_disciplina = Column(Integer, primary_key=True, index=True)
     nome = Column(String(80), nullable=False)
+    user_ra = Column(String(13), ForeignKey("usuario.ra"), nullable=False, index=True)
 
     # Relacionamentos
+    usuario = relationship("Usuario", foreign_keys=[user_ra])
     cursos = relationship("CursoDisciplina", back_populates="disciplina")
     docentes = relationship("DisciplinaDocente", back_populates="disciplina")
     notas = relationship("Nota", back_populates="disciplina")
