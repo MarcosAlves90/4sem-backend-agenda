@@ -446,10 +446,11 @@ def atualizar_usuario(
 			
 			# Se nome_curso foi fornecido, resolver para id_curso
 			if "nome_curso" in dados_atualizacao and dados_atualizacao["nome_curso"]:
+				id_instituicao: int = db_usuario.id_instituicao  # type: ignore
 				db_curso = obter_ou_criar_curso_por_nome(
 					db, 
 					dados_atualizacao["nome_curso"],
-					db_usuario.id_instituicao
+					id_instituicao
 				)
 				dados_atualizacao["id_curso"] = db_curso.id_curso
 				del dados_atualizacao["nome_curso"]
