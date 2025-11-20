@@ -17,27 +17,27 @@ router = APIRouter(
 # ============================================================================
 
 class TipoDataNaoEncontrado(HTTPException):
-	"""Tipo de data não encontrado"""
-	def __init__(self):
-		super().__init__(status_code=404, detail="Tipo de data não encontrado")
+    """Tipo de data não encontrado"""
+    def __init__(self):
+        super().__init__(status_code=404, detail="Tipo de data não encontrado")
 
 
 class ErroAoCriarTipoData(HTTPException):
-	"""Erro ao criar tipo de data"""
-	def __init__(self, detail: str):
-		super().__init__(status_code=400, detail=detail)
+    """Erro ao criar tipo de data"""
+    def __init__(self, detail: str):
+        super().__init__(status_code=400, detail=detail)
 
 
 class ErroAoAtualizarTipoData(HTTPException):
-	"""Erro ao atualizar tipo de data"""
-	def __init__(self, detail: str):
-		super().__init__(status_code=400, detail=detail)
+    """Erro ao atualizar tipo de data"""
+    def __init__(self, detail: str):
+        super().__init__(status_code=400, detail=detail)
 
 
 class ErroAoDeletarTipoData(HTTPException):
-	"""Erro ao deletar tipo de data"""
-	def __init__(self):
-		super().__init__(status_code=400, detail="Erro ao deletar tipo de data")
+    """Erro ao deletar tipo de data"""
+    def __init__(self):
+        super().__init__(status_code=400, detail="Erro ao deletar tipo de data")
 
 
 # ============================================================================
@@ -45,11 +45,11 @@ class ErroAoDeletarTipoData(HTTPException):
 # ============================================================================
 
 def _validar_tipo_data_existe(db: Session, id_tipo_data: int) -> models.TipoData:
-	"""Valida se tipo de data existe. Retorna tipo ou lança exceção."""
-	tipo_data = crud.obter_tipo_data(db, id_tipo_data)
-	if not tipo_data:
-		raise TipoDataNaoEncontrado()
-	return tipo_data
+    """Valida se tipo de data existe. Retorna tipo ou lança exceção."""
+    tipo_data = crud.obter_tipo_data(db, id_tipo_data)
+    if not tipo_data:
+        raise TipoDataNaoEncontrado()
+    return tipo_data
 
 
 # ============================================================================
@@ -204,4 +204,5 @@ def deletar_tipo_data(
         )
     
     raise ErroAoDeletarTipoData()
+
 

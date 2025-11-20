@@ -499,3 +499,4 @@ def deletar_evento_calendario(
         detail="Erro ao deletar evento do calendário"
     )
 
+

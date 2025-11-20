@@ -90,31 +90,31 @@ class Curso(Base):
 
 
 class Horario(Base):
-	"""Modelo de Horário de Aulas"""
-	__tablename__ = "horario"
+    """Modelo de Horário de Aulas"""
+    __tablename__ = "horario"
 
-	id_horario = Column(Integer, primary_key=True, index=True)
-	ra = Column(String(13), ForeignKey("usuario.ra"), nullable=False, index=True)
-	dia_semana = Column(Integer, nullable=False)
-	numero_aula = Column(Integer, nullable=True)
-	disciplina = Column(String(100), nullable=True)
+    id_horario = Column(Integer, primary_key=True, index=True)
+    ra = Column(String(13), ForeignKey("usuario.ra"), nullable=False, index=True)
+    dia_semana = Column(Integer, nullable=False)
+    numero_aula = Column(Integer, nullable=True)
+    disciplina = Column(String(100), nullable=True)
 
-	# Relacionamentos
-	usuario = relationship("Usuario", back_populates="horarios")
+    # Relacionamentos
+    usuario = relationship("Usuario", back_populates="horarios")
 
 
 class Docente(Base):
-	"""Modelo de Docente (Professor)"""
-	__tablename__ = "docente"
+    """Modelo de Docente (Professor)"""
+    __tablename__ = "docente"
 
-	id_docente = Column(Integer, primary_key=True, index=True)
-	nome = Column(String(50), nullable=False)
-	email = Column(String(40), nullable=False, index=True)
-	ra = Column(String(13), ForeignKey("usuario.ra"), nullable=False, index=True)
-	disciplina = Column(String(100), nullable=True)
+    id_docente = Column(Integer, primary_key=True, index=True)
+    nome = Column(String(50), nullable=False)
+    email = Column(String(40), nullable=False, index=True)
+    ra = Column(String(13), ForeignKey("usuario.ra"), nullable=False, index=True)
+    disciplina = Column(String(100), nullable=True)
 
-	# Relacionamentos
-	usuario = relationship("Usuario", foreign_keys=[ra])
+    # Relacionamentos
+    usuario = relationship("Usuario", foreign_keys=[ra])
 
 
 class Discente(Base):
@@ -137,17 +137,17 @@ class Discente(Base):
 
 
 class Nota(Base):
-	"""Modelo de Nota de Avaliação"""
-	__tablename__ = "nota"
+    """Modelo de Nota de Avaliação"""
+    __tablename__ = "nota"
 
-	id_nota = Column(Integer, primary_key=True, index=True)
-	ra = Column(String(13), ForeignKey("usuario.ra"), nullable=False, index=True)
-	bimestre = Column(Integer, nullable=True)
-	nota = Column(String(255), nullable=False)
-	disciplina = Column(String(100), nullable=True)
+    id_nota = Column(Integer, primary_key=True, index=True)
+    ra = Column(String(13), ForeignKey("usuario.ra"), nullable=False, index=True)
+    bimestre = Column(Integer, nullable=True)
+    nota = Column(String(255), nullable=False)
+    disciplina = Column(String(100), nullable=True)
 
-	# Relacionamentos
-	usuario = relationship("Usuario", back_populates="notas")
+    # Relacionamentos
+    usuario = relationship("Usuario", back_populates="notas")
 
 
 class Anotacao(Base):

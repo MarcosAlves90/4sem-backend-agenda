@@ -1,29 +1,27 @@
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-# import os
 
 from .database import engine, Base
 from . import models  # noqa: F401 - Necessário para registrar os modelos no SQLAlchemy
+from . import constants
 from .routers import (
-	health,
-	calendario,
-	tipo_data,
-	usuario,
-	docentes,
-	anotacao,
-	discentes,
-	notas,
-	horario,
+    health,
+    calendario,
+    tipo_data,
+    usuario,
+    docentes,
+    anotacao,
+    discentes,
+    notas,
+    horario,
 )
 
 # ============================================================================
 # INICIALIZAÇÃO DO BANCO DE DADOS
 # ============================================================================
 
-# [PERIGO] Criar tabelas automaticamente (descomentar uma única vez para inicializar)
-#Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)  # Usar migrations (alembic) em produção
 
 # ============================================================================
 # CONFIGURAÇÃO DA APLICAÇÃO
@@ -31,30 +29,25 @@ from .routers import (
 
 app = FastAPI(
     title="API Agenda Acadêmica",
-    version="1.0.1",
+    version=constants.API_VERSION,
     description="API para gerenciamento de agenda acadêmica de alunos",
 )
 
-# CORS - Necessário para permitir credenciais (cookies)
+# CORS - Configurado com domínios específicos em produção
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Substituir por domínios específicos em produção
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=constants.CORS_ORIGINS,
+    allow_credentials=constants.CORS_ALLOW_CREDENTIALS,
+    allow_methods=constants.CORS_ALLOW_METHODS,
+    allow_headers=constants.CORS_ALLOW_HEADERS,
 )
 
 
 # ============================================================================
-# TEMPLATES E RECURSOS ESTÁTICOS
+# TEMPLATES
 # ============================================================================
 
 templates = Jinja2Templates(directory="templates")
-
-# [EXEMPLO] Servir arquivos estáticos (CSS, JS, imagens)
-# if os.path.exists("static"):
-#     app.mount("/static", StaticFiles(directory="static"), name="static")
-
 
 # ============================================================================
 # ROUTERS

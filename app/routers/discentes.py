@@ -12,8 +12,8 @@ from ..auth import verificar_token
 # ============================================================================
 
 router = APIRouter(
-	tags=["Discentes"],
-	responses={404: {"description": "Não encontrado"}},
+    tags=["Discentes"],
+    responses={404: {"description": "Não encontrado"}},
 )
 
 # ============================================================================
@@ -21,39 +21,39 @@ router = APIRouter(
 # ============================================================================
 
 class DiscenteNaoEncontrado(HTTPException):
-	"""Discente não encontrado"""
-	def __init__(self):
-		super().__init__(status_code=404, detail="Discente não encontrado")
+    """Discente não encontrado"""
+    def __init__(self):
+        super().__init__(status_code=404, detail="Discente não encontrado")
 
 
 class EmailDuplicado(HTTPException):
-	"""Email já cadastrado para outro discente"""
-	def __init__(self):
-		super().__init__(status_code=400, detail="Email já cadastrado para outro discente")
+    """Email já cadastrado para outro discente"""
+    def __init__(self):
+        super().__init__(status_code=400, detail="Email já cadastrado para outro discente")
 
 
 class ErroAoCriarDiscente(HTTPException):
-	"""Erro ao criar discente"""
-	def __init__(self, detail: str):
-		super().__init__(status_code=400, detail=detail)
+    """Erro ao criar discente"""
+    def __init__(self, detail: str):
+        super().__init__(status_code=400, detail=detail)
 
 
 class ErroAoAtualizarDiscente(HTTPException):
-	"""Erro ao atualizar discente"""
-	def __init__(self, detail: str):
-		super().__init__(status_code=400, detail=detail)
+    """Erro ao atualizar discente"""
+    def __init__(self, detail: str):
+        super().__init__(status_code=400, detail=detail)
 
 
 class ErroAoDeletarDiscente(HTTPException):
-	"""Erro ao deletar discente"""
-	def __init__(self):
-		super().__init__(status_code=400, detail="Erro ao deletar discente")
+    """Erro ao deletar discente"""
+    def __init__(self):
+        super().__init__(status_code=400, detail="Erro ao deletar discente")
 
 
 class PermissaoNegada(HTTPException):
-	"""Usuário não tem permissão para acessar este discente"""
-	def __init__(self):
-		super().__init__(status_code=403, detail="Você não tem permissão para acessar este discente")
+    """Usuário não tem permissão para acessar este discente"""
+    def __init__(self):
+        super().__init__(status_code=403, detail="Você não tem permissão para acessar este discente")
 
 
 # ============================================================================
