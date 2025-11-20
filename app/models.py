@@ -76,21 +76,6 @@ class Calendario(Base):
     tipo_data = relationship("TipoData", back_populates="calendarios")
 
 
-class Disciplina(Base):
-    """Modelo de Disciplina"""
-    __tablename__ = "disciplina"
-
-    id_disciplina = Column(Integer, primary_key=True, index=True)
-    nome = Column(String(80), nullable=False)
-    user_ra = Column(String(13), ForeignKey("usuario.ra"), nullable=False, index=True)
-
-    # Relacionamentos
-    usuario = relationship("Usuario", foreign_keys=[user_ra])
-    cursos = relationship("CursoDisciplina", back_populates="disciplina")
-    docentes = relationship("DisciplinaDocente", back_populates="disciplina")
-    notas = relationship("Nota", back_populates="disciplina")
-
-
 class Curso(Base):
     """Modelo de Curso"""
     __tablename__ = "curso"
@@ -102,40 +87,18 @@ class Curso(Base):
     # Relacionamentos
     instituicao = relationship("Instituicao", back_populates="cursos")
     usuarios = relationship("Usuario", back_populates="curso")
-    disciplinas = relationship("CursoDisciplina", back_populates="curso")
-
-
-class CursoDisciplina(Base):
-    """Modelo Associativo: Curso-Disciplina"""
-    __tablename__ = "curso_disciplina"
-
-    id_curso = Column(Integer, ForeignKey("curso.id_curso"), primary_key=True)
-    id_disciplina = Column(Integer, ForeignKey("disciplina.id_disciplina"), primary_key=True)
-    modulo = Column(Integer, nullable=False)
-
-    # Relacionamentos
-    curso = relationship("Curso", back_populates="disciplinas")
-    disciplina = relationship("Disciplina", back_populates="cursos")
 
 
 class Horario(Base):
-    """Modelo de Horário de Aulas"""
-    __tablename__ = "horario"
+	"""Modelo de Horário de Aulas"""
+	__tablename__ = "horario"
 
-    id_horario = Column(Integer, primary_key=True, index=True)
-    ra = Column(String(13), ForeignKey("usuario.ra"), nullable=False, index=True)
-    dia_semana = Column(Integer, nullable=False)
-    id_disciplina_1 = Column(Integer, ForeignKey("disciplina.id_disciplina"), nullable=True)
-    id_disciplina_2 = Column(Integer, ForeignKey("disciplina.id_disciplina"), nullable=True)
-    id_disciplina_3 = Column(Integer, ForeignKey("disciplina.id_disciplina"), nullable=True)
-    id_disciplina_4 = Column(Integer, ForeignKey("disciplina.id_disciplina"), nullable=True)
+	id_horario = Column(Integer, primary_key=True, index=True)
+	ra = Column(String(13), ForeignKey("usuario.ra"), nullable=False, index=True)
+	dia_semana = Column(Integer, nullable=False)
 
-    # Relacionamentos
-    usuario = relationship("Usuario", back_populates="horarios")
-    disciplina_1_rel = relationship("Disciplina", foreign_keys=[id_disciplina_1])
-    disciplina_2_rel = relationship("Disciplina", foreign_keys=[id_disciplina_2])
-    disciplina_3_rel = relationship("Disciplina", foreign_keys=[id_disciplina_3])
-    disciplina_4_rel = relationship("Disciplina", foreign_keys=[id_disciplina_4])
+	# Relacionamentos
+	usuario = relationship("Usuario", back_populates="horarios")
 
 
 class Docente(Base):
@@ -152,17 +115,6 @@ class Docente(Base):
 
 	# Relacionamentos
 	usuario = relationship("Usuario", foreign_keys=[ra])
-	disciplinas = relationship("DisciplinaDocente", back_populates="docente")
-class DisciplinaDocente(Base):
-    """Modelo Associativo: Disciplina-Docente"""
-    __tablename__ = "disciplina_docente"
-
-    id_disciplina = Column(Integer, ForeignKey("disciplina.id_disciplina"), primary_key=True)
-    id_docente = Column(Integer, ForeignKey("docente.id_docente"), primary_key=True)
-
-    # Relacionamentos
-    disciplina = relationship("Disciplina", back_populates="docentes")
-    docente = relationship("Docente", back_populates="disciplinas")
 
 
 class Discente(Base):
@@ -185,18 +137,16 @@ class Discente(Base):
 
 
 class Nota(Base):
-    """Modelo de Nota de Avaliação"""
-    __tablename__ = "nota"
+	"""Modelo de Nota de Avaliação"""
+	__tablename__ = "nota"
 
-    id_nota = Column(Integer, primary_key=True, index=True)
-    ra = Column(String(13), ForeignKey("usuario.ra"), nullable=False, index=True)
-    id_disciplina = Column(Integer, ForeignKey("disciplina.id_disciplina"), nullable=False)
-    bimestre = Column(Integer, nullable=False)
-    nota = Column(Numeric(4, 2), nullable=True)
+	id_nota = Column(Integer, primary_key=True, index=True)
+	ra = Column(String(13), ForeignKey("usuario.ra"), nullable=False, index=True)
+	bimestre = Column(Integer, nullable=False)
+	nota = Column(Numeric(4, 2), nullable=True)
 
-    # Relacionamentos
-    usuario = relationship("Usuario", back_populates="notas")
-    disciplina = relationship("Disciplina", back_populates="notas")
+	# Relacionamentos
+	usuario = relationship("Usuario", back_populates="notas")
 
 
 class Anotacao(Base):
