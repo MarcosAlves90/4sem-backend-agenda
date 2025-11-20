@@ -97,6 +97,7 @@ CREATE TABLE IF NOT EXISTS horario (
     id_horario SERIAL PRIMARY KEY,
     ra VARCHAR(13) NOT NULL,
     dia_semana INTEGER NOT NULL,
+    numero_aula INTEGER,
     disciplina VARCHAR(100),
     FOREIGN KEY (ra) REFERENCES usuario(ra) ON DELETE CASCADE
 );
