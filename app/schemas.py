@@ -272,13 +272,7 @@ class Calendario(BaseSchema):
 
 # ---- HORÁRIO
 class HorarioCreate(BaseSchema):
-    ra: RA
     dia_semana: DiaSemanaEnum
-
-    @field_validator("ra")
-    @classmethod
-    def validar_ra_campo(cls, v):
-        return validar_ra(v)
 
 
 class Horario(BaseSchema):
@@ -294,21 +288,17 @@ class Horario(BaseSchema):
 
 # ---- NOTA
 class NotaCreate(BaseSchema):
-    ra: RA
     bimestre: Optional[int] = None
-    nota: NotaDecimal
-
-    @field_validator("ra")
-    @classmethod
-    def validar_ra_campo(cls, v):
-        return validar_ra(v)
+    nota: Optional[str] = Field(None, max_length=255)
+    disciplina: Optional[str] = Field(None, max_length=100)
 
 
 class Nota(BaseSchema):
     id_nota: int
     ra: RA
     bimestre: Optional[int] = None
-    nota: NotaDecimal
+    nota: Optional[str] = Field(None, max_length=255)
+    disciplina: Optional[str] = Field(None, max_length=100)
 
     @field_validator("ra")
     @classmethod
@@ -317,10 +307,9 @@ class Nota(BaseSchema):
 
 #atualizar nota
 class NotaUpdate(BaseSchema):
-    ra: Optional[RA] = None
-    id_disciplina: Optional[int] = None
     bimestre: Optional[int] = None
-    nota: NotaDecimal = None
+    nota: Optional[str] = Field(None, max_length=255)
+    disciplina: Optional[str] = Field(None, max_length=100)
 
 # ---- ANOTAÇÃO
 class AnotacaoCreate(BaseSchema):
