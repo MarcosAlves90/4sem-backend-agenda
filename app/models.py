@@ -96,6 +96,8 @@ class Horario(Base):
 	id_horario = Column(Integer, primary_key=True, index=True)
 	ra = Column(String(13), ForeignKey("usuario.ra"), nullable=False, index=True)
 	dia_semana = Column(Integer, nullable=False)
+	numero_aula = Column(Integer, nullable=True)
+	disciplina = Column(String(100), nullable=True)
 
 	# Relacionamentos
 	usuario = relationship("Usuario", back_populates="horarios")
