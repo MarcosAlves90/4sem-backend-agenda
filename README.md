@@ -52,20 +52,21 @@ Docs: [`http://localhost:8000/docs`](http://localhost:8000/docs)
 - `/api/v1/usuario` - Gerenciamento de usuários
 - `/api/v1/docentes` - Gerenciamento de docentes
 - `/api/v1/discentes` - Gerenciamento de discentes
-- `/api/v1/disciplinas` - Gerenciamento de disciplinas
 - `/api/v1/notas` - Gerenciamento de notas
-- `/api/v1/tipo-data` - Tipos de datas
 - `/api/v1/calendario` - Calendário acadêmico
 - `/app/v1/anotacao` - Gerenciamento de anotações
 
 ## Stack
 
-- **FastAPI** - Framework web moderno
+- **FastAPI** - Framework web moderno e rápido
+- **Uvicorn** - Servidor ASGI
 - **SQLAlchemy** - ORM
-- **PostgreSQL** - Banco de dados
+- **PostgreSQL/psycopg2** - Banco de dados
 - **Pydantic** - Validação de dados
-- **JWT** - Autenticação
-- **Alembic** - Migrations
+- **PyJWT + bcrypt** - Autenticação segura
+- **Alembic** - Migrations automáticas
+- **Jinja2** - Templates HTML
+- **python-dotenv** - Variáveis de ambiente
 
 ## Estrutura
 
@@ -81,11 +82,9 @@ app/
     ├── anotacao.py
     ├── calendario.py
     ├── discentes.py
-    ├── disciplinas.py
     ├── docentes.py
     ├── health.py
     ├── notas.py
-    ├── tipo_data.py
     └── usuario.py
 ```
 

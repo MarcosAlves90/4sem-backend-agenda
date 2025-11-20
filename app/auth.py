@@ -43,7 +43,9 @@ def criar_refresh_token(data: dict) -> str:
     return encoded_jwt
 
 
-def verificar_token(credentials = Depends(security), db: Session = Depends(get_db)) -> models.Usuario:
+def verificar_token(
+    credentials=Depends(security), db: Session = Depends(get_db)
+) -> models.Usuario:
     """Verifica o token JWT e retorna o usuário autenticado."""
     token = credentials.credentials
     try:
@@ -59,7 +61,7 @@ def verificar_token(credentials = Depends(security), db: Session = Depends(get_d
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token inválido ou expirado",
         )
-    
+
     usuario = crud.obter_usuario(db, id_usuario)
     if usuario is None:
         raise HTTPException(
