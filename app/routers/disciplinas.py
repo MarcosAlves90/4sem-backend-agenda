@@ -55,6 +55,21 @@ def _validar_disciplina_existe(db: Session, id_disciplina: int) -> models.Discip
     return disciplina
 
 
+def _validar_disciplina_pertence_usuario(
+    db: Session,
+    id_disciplina: int,
+    ra_usuario: str
+) -> models.Disciplina:
+    """Valida se disciplina existe e pertence ao usuário. Retorna disciplina ou lança exceção."""
+    disciplina = _validar_disciplina_existe(db, id_disciplina)
+    
+    # Verificar se a disciplina pertence ao usuário autenticado (comparar por RA)
+    if str(disciplina.user_ra) != str(ra_usuario):
+        raise HTTPException(status_code=403, detail="Você não tem permissão para acessar esta disciplina")
+    
+    return disciplina
+
+
 # ============================================================================
 # ENDPOINTS - READ
 # ============================================================================
@@ -74,12 +89,16 @@ def obter_disciplina(
     **Path Parameters:**
     - `id_disciplina` (int): ID único da disciplina
     
+    **Restrições:**
+    - Disciplina deve pertencer ao usuário autenticado
+    
     **Respostas:**
     - 200: Disciplina retornada com sucesso
+    - 403: Usuário não tem permissão para acessar esta disciplina
     - 404: Disciplina não encontrada
     - 401: Token ausente ou inválido
     """
-    disciplina = _validar_disciplina_existe(db, id_disciplina)
+    disciplina = _validar_disciplina_pertence_usuario(db, id_disciplina, str(usuario_autenticado.ra))
     return schemas.GenericResponse(
         data=disciplina,
         success=True,
@@ -95,7 +114,7 @@ def listar_disciplinas(
     db: Session = Depends(get_db),
 ):
     """
-    Listar todas as disciplinas com paginação.
+    Listar disciplinas do usuário autenticado com paginação.
     
     **Autenticação:**
     - Requer token JWT no header `Authorization: Bearer <token>`
@@ -108,8 +127,15 @@ def listar_disciplinas(
     - 200: Lista de disciplinas retornada com sucesso
     - 401: Token ausente ou inválido
     """
-    disciplinas = crud.obter_disciplinas(db, skip, limit)
-    total = db.query(models.Disciplina).count()
+    ra_usuario = str(usuario_autenticado.ra)
+    
+    disciplinas = db.query(models.Disciplina).filter(
+        models.Disciplina.user_ra == ra_usuario
+    ).offset(skip).limit(limit).all()
+    
+    total = db.query(models.Disciplina).filter(
+        models.Disciplina.user_ra == ra_usuario
+    ).count()
 
     return schemas.GenericListResponse(
         data=disciplinas,
@@ -140,13 +166,23 @@ def criar_disciplina(
     **Body:**
     - `nome` (string): Nome da disciplina (1-80 caracteres)
     
+    **Notas:**
+    - O RA do usuário será preenchido automaticamente a partir do token JWT
+    
     **Respostas:**
     - 201: Disciplina criada com sucesso
     - 400: Erro de validação
     - 401: Token ausente ou inválido
     """
     try:
-        nova_disciplina = crud.criar_disciplina(db, disciplina)
+        nova_disciplina = models.Disciplina(
+            nome=disciplina.nome,
+            user_ra=str(usuario_autenticado.ra)
+        )
+        db.add(nova_disciplina)
+        db.commit()
+        db.refresh(nova_disciplina)
+        
         return schemas.GenericResponse(
             data=nova_disciplina,
             success=True,
@@ -180,24 +216,29 @@ def atualizar_disciplina(
     - `nome` (string): Nome da disciplina (1-80 caracteres)
     
     **Restrições:**
-    - Disciplina deve existir
+    - Disciplina deve existir e pertencer ao usuário autenticado
     - Todos os campos são obrigatórios
     
     **Respostas:**
     - 200: Disciplina atualizada com sucesso
     - 400: Erro de validação
+    - 403: Usuário não tem permissão para atualizar esta disciplina
     - 404: Disciplina não encontrada
     - 401: Token ausente ou inválido
     """
     try:
-        _validar_disciplina_existe(db, id_disciplina)
-        disciplina_atualizada = crud.atualizar_disciplina(db, id_disciplina, disciplina)
+        disciplina_existente = _validar_disciplina_pertence_usuario(db, id_disciplina, str(usuario_autenticado.ra))
+        
+        disciplina_existente.nome = disciplina.nome  # type: ignore
+        db.commit()
+        db.refresh(disciplina_existente)
+        
         return schemas.GenericResponse(
-            data=disciplina_atualizada,
+            data=disciplina_existente,
             success=True,
             message="Disciplina atualizada com sucesso"
         )
-    except DisciplinaNaoEncontrada:
+    except (DisciplinaNaoEncontrada, ErroAoAtualizarDisciplina):
         raise
     except Exception as e:
         raise ErroAoAtualizarDisciplina(str(e))
@@ -223,24 +264,31 @@ def atualizar_disciplina_parcial(
     - `nome` (string, opcional): Nome da disciplina (1-80 caracteres)
     
     **Restrições:**
-    - Disciplina deve existir
+    - Disciplina deve existir e pertencer ao usuário autenticado
     - Apenas campos fornecidos serão atualizados
     
     **Respostas:**
     - 200: Disciplina atualizada com sucesso
     - 400: Erro de validação
+    - 403: Usuário não tem permissão para atualizar esta disciplina
     - 404: Disciplina não encontrada
     - 401: Token ausente ou inválido
     """
     try:
-        disciplina_existente = _validar_disciplina_existe(db, id_disciplina)
-        disciplina_atualizada = crud.atualizar_disciplina(db, id_disciplina, disciplina)
+        disciplina_existente = _validar_disciplina_pertence_usuario(db, id_disciplina, str(usuario_autenticado.ra))
+        
+        if disciplina.nome:
+            disciplina_existente.nome = disciplina.nome  # type: ignore
+        
+        db.commit()
+        db.refresh(disciplina_existente)
+        
         return schemas.GenericResponse(
-            data=disciplina_atualizada,
+            data=disciplina_existente,
             success=True,
             message="Disciplina atualizada parcialmente com sucesso"
         )
-    except DisciplinaNaoEncontrada:
+    except (DisciplinaNaoEncontrada, ErroAoAtualizarDisciplina):
         raise
     except Exception as e:
         raise ErroAoAtualizarDisciplina(str(e))
@@ -266,22 +314,25 @@ def deletar_disciplina(
     - `id_disciplina` (int): ID único da disciplina a deletar
     
     **Restrições:**
-    - Disciplina deve existir
+    - Disciplina deve existir e pertencer ao usuário autenticado
     - Ação irreversível
     
     **Respostas:**
     - 200: Disciplina deletada com sucesso
     - 400: Erro ao deletar disciplina
+    - 403: Usuário não tem permissão para deletar esta disciplina
     - 404: Disciplina não encontrada
     - 401: Token ausente ou inválido
     """
-    _validar_disciplina_existe(db, id_disciplina)
+    disciplina_existente = _validar_disciplina_pertence_usuario(db, id_disciplina, str(usuario_autenticado.ra))
     
-    if crud.deletar_disciplina(db, id_disciplina):
+    try:
+        db.delete(disciplina_existente)
+        db.commit()
         return schemas.GenericResponse(
             data={"id_deletado": id_disciplina},
             success=True,
             message="Disciplina deletada com sucesso"
         )
-    
-    raise ErroAoDeletarDisciplina()
+    except Exception as e:
+        raise ErroAoDeletarDisciplina()
