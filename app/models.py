@@ -140,7 +140,8 @@ class Nota(Base):
 	id_nota = Column(Integer, primary_key=True, index=True)
 	ra = Column(String(13), ForeignKey("usuario.ra"), nullable=False, index=True)
 	bimestre = Column(Integer, nullable=False)
-	nota = Column(Numeric(4, 2), nullable=True)
+	nota = Column(String(255), nullable=True)
+	disciplina = Column(String(100), nullable=True)
 
 	# Relacionamentos
 	usuario = relationship("Usuario", back_populates="notas")

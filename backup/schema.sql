@@ -107,7 +107,8 @@ CREATE TABLE IF NOT EXISTS nota (
     id_nota SERIAL PRIMARY KEY,
     ra VARCHAR(13) NOT NULL,
     bimestre INTEGER NOT NULL,
-    nota NUMERIC(4, 2),
+    nota VARCHAR(255),
+    disciplina VARCHAR(100),
     FOREIGN KEY (ra) REFERENCES usuario(ra) ON DELETE CASCADE
 );
 
