@@ -2,26 +2,18 @@
 Testes para o router de Notas.
 """
 
-import pytest
-
 
 class TestCriarNota:
     """Testes de endpoint POST /api/v1/notas/"""
 
     def test_criar_nota_com_sucesso(self, client, usuario_teste, headers_autenticado):
         """Deve criar nova nota para usuário autenticado"""
-        dados_nota = {
-            "nota": "8.5",
-            "bimestre": 1,
-            "disciplina": "Matemática"
-        }
-        
+        dados_nota = {"nota": "8.5", "bimestre": 1, "disciplina": "Matemática"}
+
         response = client.post(
-            "/api/v1/notas/",
-            json=dados_nota,
-            headers=headers_autenticado
+            "/api/v1/notas/", json=dados_nota, headers=headers_autenticado
         )
-        
+
         assert response.status_code == 201
         data = response.json()["data"]
         assert data["nota"] == dados_nota["nota"]
@@ -33,15 +25,11 @@ class TestListarNotas:
 
     def test_listar_notas_do_usuario(self, client, usuario_teste, headers_autenticado):
         """Deve listar apenas notas do usuário autenticado"""
-        dados_nota = {
-            "nota": "8.5",
-            "bimestre": 1,
-            "disciplina": "Matemática"
-        }
+        dados_nota = {"nota": "8.5", "bimestre": 1, "disciplina": "Matemática"}
         client.post("/api/v1/notas/", json=dados_nota, headers=headers_autenticado)
-        
+
         response = client.get("/api/v1/notas/", headers=headers_autenticado)
-        
+
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data["data"], list)
@@ -52,41 +40,39 @@ class TestObterNota:
 
     def test_obter_nota_do_usuario(self, client, usuario_teste, headers_autenticado):
         """Deve obter nota do usuário autenticado"""
-        dados_nota = {
-            "nota": "8.5",
-            "bimestre": 1,
-            "disciplina": "Matemática"
-        }
+        dados_nota = {"nota": "8.5", "bimestre": 1, "disciplina": "Matemática"}
         response_criacao = client.post(
-            "/api/v1/notas/",
-            json=dados_nota,
-            headers=headers_autenticado
+            "/api/v1/notas/", json=dados_nota, headers=headers_autenticado
         )
         id_nota = response_criacao.json()["data"]["id_nota"]
-        
+
         response = client.get(f"/api/v1/notas/{id_nota}", headers=headers_autenticado)
-        
+
         assert response.status_code == 200
         assert response.json()["data"]["id_nota"] == id_nota
 
-    def test_obter_nota_outro_usuario(self, client, usuario_teste, usuario_teste_2, headers_autenticado, headers_autenticado_usuario_2):
+    def test_obter_nota_outro_usuario(
+        self,
+        client,
+        usuario_teste,
+        usuario_teste_2,
+        headers_autenticado,
+        headers_autenticado_usuario_2,
+    ):
         """Deve retornar 403 se tentar acessar nota de outro usuário"""
         dados_nota = {
             "nota": "9.0",
             "bimestre": 1,
         }
         response_criacao = client.post(
-            "/api/v1/notas/",
-            json=dados_nota,
-            headers=headers_autenticado
+            "/api/v1/notas/", json=dados_nota, headers=headers_autenticado
         )
         id_nota = response_criacao.json()["data"]["id_nota"]
-        
+
         response = client.get(
-            f"/api/v1/notas/{id_nota}",
-            headers=headers_autenticado_usuario_2
+            f"/api/v1/notas/{id_nota}", headers=headers_autenticado_usuario_2
         )
-        
+
         assert response.status_code == 403
 
 
@@ -100,21 +86,22 @@ class TestListarNotasPorRA:
             "bimestre": 1,
         }
         client.post("/api/v1/notas/", json=dados_nota, headers=headers_autenticado)
-        
+
         response = client.get(
-            f"/api/v1/notas/ra/{usuario_teste.ra}",
-            headers=headers_autenticado
+            f"/api/v1/notas/ra/{usuario_teste.ra}", headers=headers_autenticado
         )
-        
+
         assert response.status_code == 200
 
-    def test_listar_notas_outro_ra(self, client, usuario_teste, usuario_teste_2, headers_autenticado_usuario_2):
+    def test_listar_notas_outro_ra(
+        self, client, usuario_teste, usuario_teste_2, headers_autenticado_usuario_2
+    ):
         """Deve retornar 403 se tentar listar notas de outro RA"""
         response = client.get(
             f"/api/v1/notas/ra/{usuario_teste.ra}",
-            headers=headers_autenticado_usuario_2
+            headers=headers_autenticado_usuario_2,
         )
-        
+
         assert response.status_code == 403
 
 
@@ -128,12 +115,10 @@ class TestAtualizarNota:
             "bimestre": 1,
         }
         response_criacao = client.post(
-            "/api/v1/notas/",
-            json=dados_nota,
-            headers=headers_autenticado
+            "/api/v1/notas/", json=dados_nota, headers=headers_autenticado
         )
         id_nota = response_criacao.json()["data"]["id_nota"]
-        
+
         dados_atualizacao = {
             "nota": "9.0",
             "bimestre": 1,
@@ -141,9 +126,9 @@ class TestAtualizarNota:
         response = client.put(
             f"/api/v1/notas/{id_nota}",
             json=dados_atualizacao,
-            headers=headers_autenticado
+            headers=headers_autenticado,
         )
-        
+
         assert response.status_code == 200
         assert response.json()["data"]["nota"] == "9.0"
 
@@ -154,19 +139,17 @@ class TestAtualizarNota:
             "bimestre": 1,
         }
         response_criacao = client.post(
-            "/api/v1/notas/",
-            json=dados_nota,
-            headers=headers_autenticado
+            "/api/v1/notas/", json=dados_nota, headers=headers_autenticado
         )
         id_nota = response_criacao.json()["data"]["id_nota"]
-        
+
         dados_atualizacao = {"nota": "9.5"}
         response = client.patch(
             f"/api/v1/notas/{id_nota}",
             json=dados_atualizacao,
-            headers=headers_autenticado
+            headers=headers_autenticado,
         )
-        
+
         assert response.status_code == 200
         assert response.json()["data"]["nota"] == "9.5"
 
@@ -181,15 +164,12 @@ class TestDeletarNota:
             "bimestre": 1,
         }
         response_criacao = client.post(
-            "/api/v1/notas/",
-            json=dados_nota,
-            headers=headers_autenticado
+            "/api/v1/notas/", json=dados_nota, headers=headers_autenticado
         )
         id_nota = response_criacao.json()["data"]["id_nota"]
-        
+
         response = client.delete(
-            f"/api/v1/notas/{id_nota}",
-            headers=headers_autenticado
+            f"/api/v1/notas/{id_nota}", headers=headers_autenticado
         )
-        
+
         assert response.status_code == 200
