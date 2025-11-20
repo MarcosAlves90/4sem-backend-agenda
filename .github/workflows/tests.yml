@@ -41,18 +41,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
-      - name: Lint com ruff
-        run: ruff check app/ tests/
-        continue-on-error: true
-
-      - name: Format check com black
-        run: black --check app/ tests/
-        continue-on-error: true
-
-      - name: Type checking com mypy
-        run: mypy app/ --ignore-missing-imports
-        continue-on-error: true
-
       - name: Executar testes com pytest
         env:
           DATABASE_URL: postgresql://postgres:postgres_test@localhost:5432/agenda_test_db
@@ -101,24 +89,29 @@ jobs:
     
     steps:
       - name: Checkout código
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Python 3.11
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
 
-      - name: Instalar dependências de lint
+      - name: Instalar dependências
         run: |
           python -m pip install --upgrade pip
           pip install ruff black mypy
 
-      - name: Verificar imports
-        run: python -m py_compile app/**/*.py tests/**/*.py
+      - name: Ruff lint
+        run: ruff check app/ tests/
         continue-on-error: true
 
-      - name: Ruff - Verificar segurança
-        run: ruff check app/ tests/ --select=E,F,W
+      - name: Black format check
+        run: black --check app/ tests/
+        continue-on-error: true
+
+      - name: MyPy type check
+        run: mypy app/ --ignore-missing-imports
         continue-on-error: true
 
   security:
