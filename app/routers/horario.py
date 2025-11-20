@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import Optional
 
 from ..database import get_db
 from ..auth import verificar_token
-from .. import crud, models, schemas
+from .. import models, schemas
 
 # ============================================================================
 # CONFIGURAÇÃO DO ROUTER
