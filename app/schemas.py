@@ -2,75 +2,97 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional, List, Generic, TypeVar, Annotated
 from datetime import date
 from decimal import Decimal
-from enum import IntEnum
 
-T = TypeVar('T')
+from . import constants, enums
+from .utils.validators import validar_ra, validar_telefone
+
+T = TypeVar("T")
 
 
 # ============================================================================
 # BASE SCHEMA COM CONFIG PADRÃO
 # ============================================================================
 
+
 class BaseSchema(BaseModel):
     """Base schema com configuração padrão para todos os schemas"""
+
     class Config:
         from_attributes = True
 
 
 # ============================================================================
-# VALIDADORES REUTILIZÁVEIS
+# TIPOS ANOTADOS REUTILIZÁVEIS
 # ============================================================================
 
-def validar_ra(v: str) -> str:
-    """Valida RA: deve conter apenas dígitos e ter exatamente 13 caracteres"""
-    if not v.isdigit():
-        raise ValueError("RA deve conter apenas dígitos e ter exatamente 13 caracteres")
-    return v
+RA = Annotated[
+    str,
+    Field(
+        ...,
+        min_length=constants.RA_MIN_LENGTH,
+        max_length=constants.RA_MAX_LENGTH,
+        description=f"Registro Acadêmico: exatamente {constants.RA_LENGTH} dígitos",
+    ),
+]
 
+Telefone = Annotated[
+    Optional[str],
+    Field(
+        None,
+        max_length=constants.TELEFONE_MAX_LENGTH,
+        description=f"Telefone celular (formato internacional com '+' ou mínimo {constants.TELEFONE_MIN_LENGTH} dígitos)",
+    ),
+]
 
-def validar_telefone(v: Optional[str]) -> Optional[str]:
-    """Valida telefone: formato internacional ou mínimo 10 dígitos"""
-    if v is not None:
-        if not v.startswith("+") and len(v) < 10:
-            raise ValueError("Telefone deve estar em formato internacional (+5511979592191) ou ter no mínimo 10 dígitos")
-    return v
+EmailUsuario = Annotated[
+    EmailStr,
+    Field(
+        ..., max_length=constants.EMAIL_MAX_LENGTH, description="Email único do usuário"
+    ),
+]
 
+Username = Annotated[
+    str,
+    Field(
+        ...,
+        min_length=constants.USERNAME_MIN_LENGTH,
+        max_length=constants.USERNAME_MAX_LENGTH,
+        description="Username único do usuário",
+    ),
+]
 
-# Tipos anotados para reutilização
-RA = Annotated[str, Field(..., min_length=13, max_length=13, description="Registro Acadêmico: exatamente 13 dígitos")]
-Telefone = Annotated[Optional[str], Field(None, max_length=15, description="Telefone celular (formato internacional com '+' ou mínimo 10 dígitos), máximo 15 caracteres")]
-EmailUsuario = Annotated[EmailStr, Field(..., max_length=40, description="Email único do usuário (máx. 40 caracteres)")]
-Username = Annotated[str, Field(..., min_length=1, max_length=20, description="Username único do usuário (máx. 20 caracteres)")]
-NotaDecimal = Annotated[Optional[Decimal], Field(None, max_digits=4, decimal_places=2, ge=Decimal("0.0"), le=Decimal("10.0"), description="Nota em formato decimal (0.0 a 10.0)")]
+NotaDecimal = Annotated[
+    Optional[Decimal],
+    Field(
+        None,
+        max_digits=4,
+        decimal_places=2,
+        ge=Decimal("0.0"),
+        le=Decimal("10.0"),
+        description="Nota em formato decimal (0.0 a 10.0)",
+    ),
+]
 
 
 # ============================================================================
-# ENUMS - Valores predefinidos
+# RE-EXPORTAR ENUMS CENTRALIZADOS
 # ============================================================================
 
-class TipoDataEnum(IntEnum):
-    """Tipos de datas no calendário acadêmico"""
-    FALTA = 1
-    NAO_LETIVO = 2
-    LETIVO = 3
-
-
-class DiaSemanaEnum(IntEnum):
-    """Dias da semana"""
-    SEGUNDA = 1
-    TERCA = 2
-    QUARTA = 3
-    QUINTA = 4
-    SEXTA = 5
-    SABADO = 6
+TipoDataEnum = enums.TipoDataEnum
+DiaSemanaEnum = enums.DiaSemanaEnum
+NumeroAulaEnum = enums.NumeroAulaEnum
+TipoBimestreEnum = enums.TipoBimestreEnum
+TipoModuloEnum = enums.TipoModuloEnum
 
 
 # ============================================================================
 # RESPONSE GENÉRICO - Base para todas as respostas
 # ============================================================================
 
+
 class GenericResponse(BaseSchema, Generic[T]):
     """Modelo genérico de response para padronizar todas as respostas da API"""
+
     data: T
     success: bool = True
     message: Optional[str] = None
@@ -78,6 +100,7 @@ class GenericResponse(BaseSchema, Generic[T]):
 
 class GenericListResponse(BaseSchema, Generic[T]):
     """Modelo genérico para respostas com listas"""
+
     data: List[T]
     success: bool = True
     message: Optional[str] = None
@@ -90,65 +113,71 @@ class GenericListResponse(BaseSchema, Generic[T]):
 # SCHEMAS - TABELAS BASE
 # ============================================================================
 
+
 # ---- INSTITUIÇÃO (assumindo que existe referência em usuario.id_instituicao)
 class InstituicaoCreate(BaseSchema):
-    nome: str = Field(..., min_length=1, max_length=80)
+    nome: str = Field(
+        ...,
+        min_length=constants.INSTITUICAO_MIN_LENGTH,
+        max_length=constants.INSTITUICAO_MAX_LENGTH,
+    )
 
 
 class Instituicao(BaseSchema):
     id_instituicao: int
-    nome: str = Field(..., min_length=1, max_length=80)
+    nome: str = Field(
+        ...,
+        min_length=constants.INSTITUICAO_MIN_LENGTH,
+        max_length=constants.INSTITUICAO_MAX_LENGTH,
+    )
 
 
-# ---- TIPO DE DATA
-class TipoDataCreate(BaseSchema):
-    nome: str = Field(..., min_length=1, max_length=10)
-
-
-class TipoData(BaseSchema):
-    id_tipo_data: int
-    nome: str = Field(..., min_length=1, max_length=10)
-
-
-class DisciplinaCreate(BaseSchema):
-    nome: str = Field(..., min_length=1, max_length=80)
-
-
-class Disciplina(BaseSchema):
-    id_disciplina: int
-    nome: str = Field(..., min_length=1, max_length=80)
-    user_ra: RA
-
-    @field_validator("user_ra")
-    @classmethod
-    def validar_user_ra(cls, v):
-        return validar_ra(v)
+# ---- CURSO
 
 
 class CursoCreate(BaseSchema):
-    nome: str = Field(..., min_length=1, max_length=80)
+    nome: str = Field(
+        ...,
+        min_length=constants.INSTITUICAO_MIN_LENGTH,
+        max_length=constants.INSTITUICAO_MAX_LENGTH,
+    )
 
 
 class Curso(BaseSchema):
     id_curso: int
-    nome: str = Field(..., min_length=1, max_length=80)
+    nome: str = Field(
+        ...,
+        min_length=constants.INSTITUICAO_MIN_LENGTH,
+        max_length=constants.INSTITUICAO_MAX_LENGTH,
+    )
+
+
+# ---- DOCENTE
 
 
 class DocenteCreate(BaseSchema):
-    nome: str = Field(..., min_length=1, max_length=50)
+    nome: str = Field(
+        ..., min_length=constants.NOME_MIN_LENGTH, max_length=constants.NOME_MAX_LENGTH
+    )
     email: EmailStr
+    disciplina: Optional[str] = Field(None, max_length=constants.DISCIPLINA_MAX_LENGTH)
 
 
 class Docente(BaseSchema):
     id_docente: int
-    nome: str = Field(..., min_length=1, max_length=50)
+    nome: str = Field(
+        ..., min_length=constants.NOME_MIN_LENGTH, max_length=constants.NOME_MAX_LENGTH
+    )
     email: EmailStr
     ra: Optional[RA] = None
+    disciplina: Optional[str] = Field(None, max_length=constants.DISCIPLINA_MAX_LENGTH)
 
 
 # ---- DISCENTE
 class DiscenteCreate(BaseSchema):
-    nome: str = Field(..., min_length=1, max_length=50)
+    nome: str = Field(
+        ..., min_length=constants.NOME_MIN_LENGTH, max_length=constants.NOME_MAX_LENGTH
+    )
     email: EmailStr
     tel_celular: Telefone = None
     id_curso: Optional[int] = None
@@ -161,7 +190,9 @@ class DiscenteCreate(BaseSchema):
 
 class Discente(BaseSchema):
     id_discente: int
-    nome: str = Field(..., min_length=1, max_length=50)
+    nome: str = Field(
+        ..., min_length=constants.NOME_MIN_LENGTH, max_length=constants.NOME_MAX_LENGTH
+    )
     email: EmailStr
     tel_celular: Telefone = None
     id_curso: Optional[int] = None
@@ -171,10 +202,14 @@ class Discente(BaseSchema):
     @classmethod
     def validar_tel(cls, v):
         return validar_telefone(v)
-    
+
+
 class DiscenteUpdate(BaseSchema):
     """Schema para atualização parcial (PATCH) de Discente"""
-    nome: Optional[str] = Field(None, min_length=1, max_length=50)
+
+    nome: Optional[str] = Field(
+        None, min_length=constants.NOME_MIN_LENGTH, max_length=constants.NOME_MAX_LENGTH
+    )
     email: Optional[EmailStr] = None
     tel_celular: Telefone = None
     id_curso: Optional[int] = None
@@ -189,17 +224,25 @@ class DiscenteUpdate(BaseSchema):
 # SCHEMAS - USUÁRIO (STUDENT/ACADEMICO)
 # ============================================================================
 
+
 class UsuarioCreate(BaseSchema):
     ra: RA
-    nome: str = Field(..., min_length=1, max_length=50)
+    nome: str = Field(
+        ..., min_length=constants.NOME_MIN_LENGTH, max_length=constants.NOME_MAX_LENGTH
+    )
     email: EmailUsuario
     username: Username
-    nome_instituicao: str = Field(..., min_length=1, max_length=80, description="Nome da instituição (será criada se não existir)")
-    senha_hash: str = Field(..., min_length=6)
+    nome_instituicao: str = Field(
+        ...,
+        min_length=constants.INSTITUICAO_MIN_LENGTH,
+        max_length=constants.INSTITUICAO_MAX_LENGTH,
+        description="Nome da instituição (será criada se não existir)",
+    )
+    senha_hash: str = Field(..., min_length=constants.SENHA_MIN_LENGTH)
     dt_nascimento: Optional[date] = None
     tel_celular: Telefone = None
     id_curso: Optional[int] = None
-    modulo: Optional[int] = Field(1, ge=1, le=12)
+    modulo: Optional[int] = Field(1, ge=constants.MODULO_MIN, le=constants.MODULO_MAX)
     bimestre: Optional[int] = None
 
     @field_validator("ra")
@@ -214,25 +257,43 @@ class UsuarioCreate(BaseSchema):
 
 
 class UsuarioUpdate(BaseSchema):
-	nome: Optional[str] = Field(None, min_length=1, max_length=50)
-	email: Optional[EmailUsuario] = None
-	username: Optional[Username] = None
-	senha_hash: Optional[str] = Field(None, min_length=6, description="Senha (será hasheada automaticamente)")
-	dt_nascimento: Optional[date] = None
-	tel_celular: Telefone = None
-	nome_curso: Optional[str] = Field(None, min_length=1, max_length=80, description="Nome do curso (será criado se não existir)")
-	modulo: Optional[int] = Field(None, ge=1, le=12)
-	bimestre: Optional[int] = None
+    nome: Optional[str] = Field(
+        None, min_length=constants.NOME_MIN_LENGTH, max_length=constants.NOME_MAX_LENGTH
+    )
+    email: Optional[EmailUsuario] = None
+    username: Optional[Username] = None
+    senha_hash: Optional[str] = Field(
+        None,
+        min_length=constants.SENHA_MIN_LENGTH,
+        description="Senha (será hasheada automaticamente)",
+    )
+    dt_nascimento: Optional[date] = None
+    tel_celular: Telefone = None
+    nome_curso: Optional[str] = Field(
+        None,
+        min_length=constants.INSTITUICAO_MIN_LENGTH,
+        max_length=constants.INSTITUICAO_MAX_LENGTH,
+        description="Nome do curso (será criado se não existir)",
+    )
+    modulo: Optional[int] = Field(
+        None, ge=constants.MODULO_MIN, le=constants.MODULO_MAX
+    )
+    bimestre: Optional[int] = None
 
-	@field_validator("tel_celular")
-	@classmethod
-	def validar_tel(cls, v):
-		return validar_telefone(v)
+    @field_validator("tel_celular")
+    @classmethod
+    def validar_tel(cls, v):
+        return validar_telefone(v)
+
+
 class Usuario(BaseSchema):
     """Modelo sem expor senha_hash"""
+
     id_usuario: Optional[int] = None
     ra: RA
-    nome: str = Field(..., min_length=1, max_length=50)
+    nome: str = Field(
+        ..., min_length=constants.NOME_MIN_LENGTH, max_length=constants.NOME_MAX_LENGTH
+    )
     email: EmailUsuario
     username: Username
     id_instituicao: int
@@ -241,7 +302,7 @@ class Usuario(BaseSchema):
     tel_celular: Telefone = None
     id_curso: Optional[int] = None
     nome_curso: Optional[str] = None
-    modulo: Optional[int] = Field(1, ge=1, le=12)
+    modulo: Optional[int] = Field(1, ge=constants.MODULO_MIN, le=constants.MODULO_MAX)
     bimestre: Optional[int] = None
 
     @field_validator("ra")
@@ -259,21 +320,31 @@ class Usuario(BaseSchema):
 # SCHEMAS - TABELAS RELACIONAIS
 # ============================================================================
 
+
 # ---- CALENDÁRIO
 class CalendarioCreate(BaseSchema):
     """Schema para criar evento de calendário - RA é obtido do token autenticado"""
+
     data_evento: date = Field(..., description="Data do evento (formato: YYYY-MM-DD)")
-    id_tipo_data: TipoDataEnum = Field(..., description="Tipo de data (1=Falta, 2=Não Letivo, 3=Letivo)")
+    id_tipo_data: TipoDataEnum = Field(
+        ..., description="Tipo de data (1=Falta, 2=Não Letivo, 3=Letivo)"
+    )
 
 
 class CalendarioUpdate(BaseSchema):
     """Schema para atualizar evento de calendário - RA é obtido do token autenticado"""
-    data_evento: Optional[date] = Field(None, description="Data do evento (formato: YYYY-MM-DD)")
-    id_tipo_data: Optional[TipoDataEnum] = Field(None, description="Tipo de data (1=Falta, 2=Não Letivo, 3=Letivo)")
+
+    data_evento: Optional[date] = Field(
+        None, description="Data do evento (formato: YYYY-MM-DD)"
+    )
+    id_tipo_data: Optional[TipoDataEnum] = Field(
+        None, description="Tipo de data (1=Falta, 2=Não Letivo, 3=Letivo)"
+    )
 
 
 class Calendario(BaseSchema):
     """Schema de resposta para evento de calendário"""
+
     id_data_evento: int
     ra: RA = Field(..., description="RA do usuário (obtido do token)")
     data_evento: date
@@ -287,77 +358,105 @@ class Calendario(BaseSchema):
 
 # ---- HORÁRIO
 class HorarioCreate(BaseSchema):
-    ra: RA
     dia_semana: DiaSemanaEnum
-    id_disciplina_1: Optional[int] = None
-    id_disciplina_2: Optional[int] = None
-    id_disciplina_3: Optional[int] = None
-    id_disciplina_4: Optional[int] = None
-
-    @field_validator("ra")
-    @classmethod
-    def validar_ra_campo(cls, v):
-        return validar_ra(v)
+    numero_aula: Optional[int] = Field(
+        None,
+        ge=constants.NUMERO_AULA_MIN,
+        le=constants.NUMERO_AULA_MAX,
+        description=f"Número da aula ({constants.NUMERO_AULA_MIN}-{constants.NUMERO_AULA_MAX})",
+    )
+    disciplina: Optional[str] = Field(None, max_length=constants.DISCIPLINA_MAX_LENGTH)
 
 
 class Horario(BaseSchema):
     id_horario: int
     ra: RA
     dia_semana: DiaSemanaEnum
-    id_disciplina_1: Optional[int] = None
-    id_disciplina_2: Optional[int] = None
-    id_disciplina_3: Optional[int] = None
-    id_disciplina_4: Optional[int] = None
+    numero_aula: Optional[int] = Field(
+        None,
+        ge=constants.NUMERO_AULA_MIN,
+        le=constants.NUMERO_AULA_MAX,
+        description=f"Número da aula ({constants.NUMERO_AULA_MIN}-{constants.NUMERO_AULA_MAX})",
+    )
+    disciplina: Optional[str] = Field(None, max_length=constants.DISCIPLINA_MAX_LENGTH)
 
     @field_validator("ra")
     @classmethod
     def validar_ra_campo(cls, v):
         return validar_ra(v)
+
+
+class HorarioUpdate(BaseSchema):
+    dia_semana: Optional[DiaSemanaEnum] = None
+    numero_aula: Optional[int] = Field(
+        None,
+        ge=constants.NUMERO_AULA_MIN,
+        le=constants.NUMERO_AULA_MAX,
+        description=f"Número da aula ({constants.NUMERO_AULA_MIN}-{constants.NUMERO_AULA_MAX})",
+    )
+    disciplina: Optional[str] = Field(None, max_length=constants.DISCIPLINA_MAX_LENGTH)
 
 
 # ---- NOTA
 class NotaCreate(BaseSchema):
-    ra: RA
-    id_disciplina: int
     bimestre: Optional[int] = None
-    nota: NotaDecimal
-
-    @field_validator("ra")
-    @classmethod
-    def validar_ra_campo(cls, v):
-        return validar_ra(v)
+    nota: str = Field(
+        ..., min_length=constants.NOTA_MIN_LENGTH, max_length=constants.NOTA_MAX_LENGTH
+    )
+    disciplina: Optional[str] = Field(None, max_length=constants.DISCIPLINA_MAX_LENGTH)
 
 
 class Nota(BaseSchema):
     id_nota: int
     ra: RA
-    id_disciplina: int
     bimestre: Optional[int] = None
-    nota: NotaDecimal
+    nota: str = Field(
+        ..., min_length=constants.NOTA_MIN_LENGTH, max_length=constants.NOTA_MAX_LENGTH
+    )
+    disciplina: Optional[str] = Field(None, max_length=constants.DISCIPLINA_MAX_LENGTH)
 
     @field_validator("ra")
     @classmethod
     def validar_ra_campo(cls, v):
         return validar_ra(v)
 
-#atualizar nota
+
+# atualizar nota
 class NotaUpdate(BaseSchema):
-    ra: Optional[RA] = None
-    id_disciplina: Optional[int] = None
     bimestre: Optional[int] = None
-    nota: NotaDecimal = None
+    nota: Optional[str] = Field(
+        None, min_length=constants.NOTA_MIN_LENGTH, max_length=constants.NOTA_MAX_LENGTH
+    )
+    disciplina: Optional[str] = Field(None, max_length=100)
+
 
 # ---- ANOTAÇÃO
 class AnotacaoCreate(BaseSchema):
-	titulo: str = Field(..., min_length=1, max_length=50)
-	anotacao: str = Field(..., min_length=1, max_length=255)
+    titulo: str = Field(
+        ...,
+        min_length=constants.TITULO_ANOTACAO_MIN_LENGTH,
+        max_length=constants.TITULO_ANOTACAO_MAX_LENGTH,
+    )
+    anotacao: str = Field(
+        ...,
+        min_length=constants.ANOTACAO_MIN_LENGTH,
+        max_length=constants.ANOTACAO_MAX_LENGTH,
+    )
 
 
 class Anotacao(BaseSchema):
     id_anotacao: int
     ra: RA
-    titulo: str = Field(..., min_length=1, max_length=50)
-    anotacao: str = Field(..., min_length=1, max_length=255)
+    titulo: str = Field(
+        ...,
+        min_length=constants.TITULO_ANOTACAO_MIN_LENGTH,
+        max_length=constants.TITULO_ANOTACAO_MAX_LENGTH,
+    )
+    anotacao: str = Field(
+        ...,
+        min_length=constants.ANOTACAO_MIN_LENGTH,
+        max_length=constants.ANOTACAO_MAX_LENGTH,
+    )
     dt_anotacao: date
 
     @field_validator("ra")
@@ -370,10 +469,12 @@ class Anotacao(BaseSchema):
 # SCHEMAS - AUTENTICAÇÃO (JWT)
 # ============================================================================
 
+
 class Login(BaseSchema):
     """Credenciais para login"""
+
     username: Username
-    senha_hash: str = Field(..., min_length=6)
+    senha_hash: str = Field(..., min_length=constants.SENHA_MIN_LENGTH)
 
 
 class Token(BaseSchema):
@@ -383,6 +484,7 @@ class Token(BaseSchema):
     será enviado preferencialmente via cookie HttpOnly. Mantemos o campo
     para compatibilidade em casos onde seja necessário retorná-lo no body.
     """
+
     access_token: str
     refresh_token: Optional[str] = None
     token_type: str = "bearer"
@@ -390,64 +492,5 @@ class Token(BaseSchema):
 
 class RefreshTokenRequest(BaseSchema):
     """Request para renovar access_token"""
+
     refresh_token: str
-
-
-# ============================================================================
-# SCHEMAS - MODELOS COM RELACIONAMENTOS (OPCIONAL - para consultas complexas)
-# ============================================================================
-
-class UsuarioDetail(Usuario):
-    """Modelo com dados relacionados do usuário"""
-    instituicao: Optional[Instituicao] = None
-    curso: Optional[Curso] = None
-
-
-class CursoDetail(Curso):
-    """Modelo com disciplinas do curso"""
-    disciplinas: List["CursoDisciplinaDetail"] = []
-
-
-class DisciplinaDetail(Disciplina):
-	"""Modelo com docentes e cursos"""
-	docentes: List[Docente] = []
-	cursos: List[Curso] = []
-
-
-# ============================================================================
-# SCHEMAS - TABELAS ASSOCIATIVAS
-# ============================================================================
-
-class CursoDisciplinaCreate(BaseSchema):
-	"""Schema para criar associação Curso-Disciplina"""
-	id_curso: int
-	id_disciplina: int
-	modulo: int = Field(..., ge=1, le=12, description="Módulo (1-12)")
-
-
-class CursoDisciplina(CursoDisciplinaCreate):
-	"""Schema completo para Curso-Disciplina"""
-	pass
-
-
-class CursoDisciplinaDetail(CursoDisciplina):
-	"""Modelo com dados relacionados"""
-	curso: Optional[Curso] = None
-	disciplina: Optional[Disciplina] = None
-
-
-class DisciplinaDocenteCreate(BaseSchema):
-	"""Schema para criar associação Disciplina-Docente"""
-	id_disciplina: int
-	id_docente: int
-
-
-class DisciplinaDocente(DisciplinaDocenteCreate):
-	"""Schema completo para Disciplina-Docente"""
-	pass
-
-
-class DisciplinaDocenteDetail(DisciplinaDocente):
-	"""Modelo com dados relacionados"""
-	disciplina: Optional[Disciplina] = None
-	docente: Optional[Docente] = None
