@@ -31,7 +31,9 @@ CREATE TABLE IF NOT EXISTS curso (
 -- Tabela de Disciplinas
 CREATE TABLE IF NOT EXISTS disciplina (
     id_disciplina SERIAL PRIMARY KEY,
-    nome VARCHAR(80) NOT NULL
+    nome VARCHAR(80) NOT NULL,
+    user_ra VARCHAR(13) NOT NULL,
+    FOREIGN KEY (user_ra) REFERENCES usuario(ra) ON DELETE CASCADE
 );
 
 -- ============================================================================
@@ -176,7 +178,9 @@ CREATE INDEX IF NOT EXISTS idx_usuario_email ON usuario(email);
 CREATE INDEX IF NOT EXISTS idx_usuario_username ON usuario(username);
 CREATE INDEX IF NOT EXISTS idx_usuario_ra ON usuario(ra);
 CREATE INDEX IF NOT EXISTS idx_curso_instituicao ON curso(id_instituicao);
+CREATE INDEX IF NOT EXISTS idx_disciplina_user_ra ON disciplina(user_ra);
 CREATE INDEX IF NOT EXISTS idx_docente_email ON docente(email);
+CREATE INDEX IF NOT EXISTS idx_docente_ra ON docente(ra);
 CREATE INDEX IF NOT EXISTS idx_discente_email ON discente(email);
 CREATE INDEX IF NOT EXISTS idx_discente_ra ON discente(ra);
 
