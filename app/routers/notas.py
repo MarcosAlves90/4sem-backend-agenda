@@ -11,7 +11,6 @@ from .. import crud, models, schemas
 # ============================================================================
 
 router = APIRouter(
-	prefix="/notas",
 	tags=["Notas"],
 	responses={404: {"description": "Não encontrado"}},
 )
