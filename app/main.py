@@ -68,4 +68,4 @@ app.include_router(calendario.router, prefix="/api/v1/calendario")
 @app.get("/", tags=["Health"])
 def homepage(request: Request):
     """Página inicial - links para documentação."""
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse("index.html", {"request": request, "version": constants.API_VERSION})

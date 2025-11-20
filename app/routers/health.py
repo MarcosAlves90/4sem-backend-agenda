@@ -1,5 +1,7 @@
 from fastapi import APIRouter
 
+from .. import constants
+
 # ============================================================================
 # CONFIGURAÇÃO DO ROUTER
 # ============================================================================
@@ -23,14 +25,14 @@ def health_check():
     **Respostas:**
     - 200: API está saudável e online
       - `status` (string): Estado da API ("healthy")
-      - `version` (string): Versão da API (ex: "1.0.1")
+      - `version` (string): Versão da API (ex: "1.1.0")
 
     **Exemplo de Resposta:**
     ```json
     {
       "status": "healthy",
-      "version": "1.0.1"
+      "version": "1.1.0"
     }
     ```
     """
-    return {"status": "healthy", "version": "1.0.1"}
+    return {"status": "healthy", "version": constants.API_VERSION}

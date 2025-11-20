@@ -76,35 +76,6 @@ class TestObterNota:
         assert response.status_code == 403
 
 
-class TestListarNotasPorRA:
-    """Testes de endpoint GET /api/v1/notas/ra/{ra}"""
-
-    def test_listar_notas_por_ra(self, client, usuario_teste, headers_autenticado):
-        """Deve listar notas do próprio RA"""
-        dados_nota = {
-            "nota": "8.5",
-            "bimestre": 1,
-        }
-        client.post("/api/v1/notas/", json=dados_nota, headers=headers_autenticado)
-
-        response = client.get(
-            f"/api/v1/notas/ra/{usuario_teste.ra}", headers=headers_autenticado
-        )
-
-        assert response.status_code == 200
-
-    def test_listar_notas_outro_ra(
-        self, client, usuario_teste, usuario_teste_2, headers_autenticado_usuario_2
-    ):
-        """Deve retornar 403 se tentar listar notas de outro RA"""
-        response = client.get(
-            f"/api/v1/notas/ra/{usuario_teste.ra}",
-            headers=headers_autenticado_usuario_2,
-        )
-
-        assert response.status_code == 403
-
-
 class TestAtualizarNota:
     """Testes de endpoints PUT/PATCH /api/v1/notas/{id_nota}"""
 

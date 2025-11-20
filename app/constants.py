@@ -163,7 +163,9 @@ COOKIE_SAMESITE = "lax"
 # VERSÃO DA API
 # ============================================================================
 
-API_VERSION = "1.0.1"
+# TODO: [HIGH] Mudar versão da API para 1.1.0 aqui, no README e no health
+
+API_VERSION = "1.1.0"
 """Versão atual da API"""
 
 # ============================================================================

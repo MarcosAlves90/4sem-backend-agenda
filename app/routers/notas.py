@@ -231,62 +231,6 @@ def obter_nota(
     )
 
 
-@router.get("/ra/{ra}", response_model=schemas.GenericListResponse[schemas.Nota])
-def listar_notas_por_ra(
-    ra: str,
-    usuario_autenticado: models.Usuario = Depends(verificar_token),
-    skip: int = Query(0, ge=0, description="Paginação: saltar registros"),
-    limit: int = Query(100, ge=1, le=1000, description="Limite de registros"),
-    db: Session = Depends(get_db),
-):
-    """
-    Listar notas de um aluno específico (por RA) com paginação.
-
-    **Autenticação:**
-    - Requer token JWT no header `Authorization: Bearer <token>`
-
-    **Path Parameters:**
-    - `ra` (string): RA do aluno (exatamente 13 dígitos)
-
-    **Query Parameters:**
-    - `skip` (int): Número de registros a saltar. Padrão: 0
-    - `limit` (int): Número máximo de registros por página. Padrão: 100, Máximo: 1000
-
-    **Restrições:**
-    - Usuário só pode listar notas de seu próprio RA
-
-    **Respostas:**
-    - 200: Lista de notas retornada com sucesso
-    - 403: Usuário não tem permissão para acessar notas de outro RA
-    - 401: Token ausente ou inválido
-    """
-    # Validar se o RA solicitado corresponde ao do usuário autenticado
-    if ra != str(usuario_autenticado.ra):
-        raise HTTPException(
-            status_code=403,
-            detail="Você não tem permissão para acessar notas de outro RA",
-        )
-
-    notas = (
-        db.query(models.Nota)
-        .filter(models.Nota.ra == ra)
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
-
-    total = _contar_notas(db, models.Nota.ra == ra)
-
-    return schemas.GenericListResponse(
-        data=notas,
-        total=total,
-        skip=skip,
-        limit=limit,
-        success=True,
-        message="Notas do aluno retornadas com sucesso",
-    )
-
-
 # ============================================================================
 # ENDPOINTS - UPDATE
 # ============================================================================
